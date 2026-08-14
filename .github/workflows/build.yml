@@ -1,0 +1,77 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release 标签名（如 v1.0.1；留空则用当前分支名）'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (Release)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore & Build
+        run: msbuild DshNotifyicon.slnx /restore /p:Configuration=Release /v:m /nologo
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DshNotifyicon-build
+          path: |
+            DshNotifyicon/bin/Release/DshNotifyicon.exe
+            DshNotifyicon/bin/Release/DshNotifyicon.exe.config
+            DshNotifyicon/bin/Release/Hardcodet.NotifyIcon.Wpf.dll
+            DshNotifyicon/bin/Release/Newtonsoft.Json.dll
+            README.md
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: DshNotifyicon-build
+          path: dist
+
+      - name: Package ZIP
+        run: |
+          cd dist
+          zip -r DshNotifyicon.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: ${{ github.event.inputs.version || github.ref_name }}
+          body: |
+            ## DshNotifyicon — DSH 托盘助手
+
+            自动构建产物（Release）。解压后运行 `DshNotifyicon.exe` 即可（依赖 .NET Framework 4.6.2，Windows 10/11 自带）。
+
+            > 由 GitHub Actions 自动生成；本次提交的变更见下方自动生成的 Release Notes。
+          files: dist/DshNotifyicon.zip
+          generate_release_notes: true
