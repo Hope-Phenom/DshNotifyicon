@@ -162,8 +162,10 @@
                                 <Run Text="DeepSeek Harness: "/>
                                 <Hyperlink NavigateUri="https://github.com/deepseek-ai/deepseek-harness" RequestNavigate="Hyperlink_RequestNavigate">github.com/deepseek-ai/deepseek-harness</Hyperlink>
                             </TextBlock>
-                            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="Gray"
-                                       Text="本工具仓库地址：配置 GitHub 远端后在此补充"/>
+                            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                                <Run Text="本工具仓库: "/>
+                                <Hyperlink NavigateUri="https://github.com/Hope-Phenom/DshNotifyicon" RequestNavigate="Hyperlink_RequestNavigate">github.com/Hope-Phenom/DshNotifyicon</Hyperlink>
+                            </TextBlock>
                         </StackPanel>
                     </GroupBox>
 

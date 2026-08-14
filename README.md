@@ -1,6 +1,10 @@
 # DshNotifyicon — DSH 托盘助手
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
+
 基于 WPF（.NET Framework 4.6.2）的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）桌面助手。托盘常驻，一键解决环境配置与 Web UI 启停的易用性问题——**不再需要手动打开命令行窗口，也不需要自己记 URL**。
+
+> 项目主页：[github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
 
 ## 特性
 
