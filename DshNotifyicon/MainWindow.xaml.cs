@@ -10,11 +10,13 @@ using DshNotifyicon.Services;
 namespace DshNotifyicon
 {
     /// <summary>
-    /// 主窗口：环境 / 服务 / 设置 三页。关闭即隐藏到托盘；所有操作经服务层异步执行。
+    /// 主窗口：环境 / 服务 / 设置 / 关于 四页。关闭即隐藏到托盘；所有操作经服务层异步执行。
+    /// 界面语言：启动时按设置应用（auto = 跟随系统），语言切换后由 Loc.Changed 刷新全部静态文案。
     /// </summary>
     public partial class MainWindow : Window
     {
         bool _allowClose;
+        bool _loadingUi;
         const int MaxLogLines = 2000;
 
         // 长操作（安装/更新）状态
@@ -24,6 +26,93 @@ namespace DshNotifyicon
         public MainWindow()
         {
             InitializeComponent();
+            Loc.Changed += (s, e) =>
+            {
+                try
+                {
+                    if (Dispatcher.CheckAccess()) ApplyLanguage();
+                    else Dispatcher.BeginInvoke(new Action(ApplyLanguage));
+                }
+                catch { }
+            };
+            ApplyLanguage();
+        }
+
+        /// <summary>静态文案整体刷新（构造时 + 语言切换时调用）。</summary>
+        void ApplyLanguage()
+        {
+            Title = Loc.T("app.name");
+            tabEnv.Header = Loc.T("tab.env");
+            tabService.Header = Loc.T("tab.service");
+            tabSettings.Header = Loc.T("tab.settings");
+            tabAbout.Header = Loc.T("tab.about");
+
+            btnCheck.Content = Loc.T("env.check");
+            gbNode.Header = Loc.T("env.nodeGroup");
+            btnInstallNode.Content = Loc.T("env.installNode");
+            gbMirror.Header = Loc.T("env.mirrorGroup");
+            SetComboItem(cmbMirror, 0, Loc.T("env.mirrorDefault"));
+            SetComboItem(cmbMirror, 1, Loc.T("env.mirrorNpmmirror"));
+            SetComboItem(cmbMirror, 2, Loc.T("env.mirrorCustom"));
+            txtCustomMirror.ToolTip = Loc.T("env.mirrorTooltip");
+            btnApplyMirror.Content = Loc.T("env.applyMirror");
+            btnGlobalRegistry.Content = Loc.T("env.globalNpmrc");
+            gbDsh.Header = Loc.T("env.dshGroup");
+            btnInstallDsh.Content = Loc.T("env.installDsh");
+            btnCheckUpdate.Content = Loc.T("env.checkUpdate");
+
+            lblPort.Text = Loc.T("svc.port");
+            chkRandomPort.Content = Loc.T("svc.randomPort");
+            lblBind.Text = Loc.T("svc.bindAddr");
+            btnStart.Content = Loc.T("svc.start");
+            btnStop.Content = Loc.T("svc.stop");
+            btnRestart.Content = Loc.T("svc.restart");
+            btnOpenUi.Content = Loc.T("svc.openUi");
+            lblLog.Text = Loc.T("svc.logLabel");
+
+            chkAutoOpen.Content = Loc.T("set.autoOpen");
+            chkAutoStart.Content = Loc.T("set.autoStart");
+            chkShowMain.Content = Loc.T("set.showMain");
+            lblExitNote.Text = Loc.T("set.exitNote");
+            gbLang.Header = Loc.T("set.langGroup");
+            SetComboItem(cmbLang, 0, Loc.T("set.langAuto"));
+            SetComboItem(cmbLang, 1, Loc.T("set.langZh"));
+            SetComboItem(cmbLang, 2, Loc.T("set.langEn"));
+            lblLangHint.Text = Loc.T("set.langHint");
+            gbAdvanced.Header = Loc.T("set.advanced");
+            lblTrusted.Text = Loc.T("set.trustedHosts");
+            lblNodePath.Text = Loc.T("set.nodePath");
+            gbCleanup.Header = Loc.T("set.cleanup");
+            lblCleanupDesc.Text = Loc.T("set.cleanupDesc");
+            btnCleanup.Content = Loc.T("set.cleanupBtn");
+            btnSaveSettings.Content = Loc.T("set.save");
+            btnOpenSettingsDir.Content = Loc.T("set.openDir");
+
+            txtAboutName.Text = Loc.T("about.name");
+            txtAboutDesc.Text = Loc.T("about.desc");
+            gbTech.Header = Loc.T("about.techGroup");
+            txtTech1.Text = Loc.T("about.tech1");
+            txtTech2.Text = Loc.T("about.tech2");
+            txtTech3.Text = Loc.T("about.tech3");
+            gbLinks.Header = Loc.T("about.linksGroup");
+            runLinkDh.Text = Loc.T("about.linkDh");
+            runLinkRepo.Text = Loc.T("about.linkRepo");
+            gbLicense.Header = Loc.T("about.licenseGroup");
+            txtLicense.Text = Loc.T("about.license");
+            txtCredits.Text = Loc.T("about.credits");
+            if (txtAboutVersion.Text.Length == 0) txtAboutVersion.Text = AboutVersionText();
+        }
+
+        static void SetComboItem(ComboBox cmb, int index, string content)
+        {
+            if (cmb.Items.Count > index && cmb.Items[index] is ComboBoxItem)
+                ((ComboBoxItem)cmb.Items[index]).Content = content;
+        }
+
+        static string AboutVersionText()
+        {
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+            return Loc.T("about.version", v, Environment.Is64BitProcess ? "x64" : "x86");
         }
 
         // ── 窗口生命周期 ──
@@ -73,8 +162,7 @@ namespace DshNotifyicon
         {
             LoadSettingsIntoUi();
             FillLogFromSnapshot();
-            txtAboutVersion.Text = "版本 " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) +
-                                   " · " + (Environment.Is64BitProcess ? "x64" : "x86") + " · .NET Framework 4.6.2";
+            txtAboutVersion.Text = AboutVersionText();
             _ = RunEnvCheckAsync();
         }
 
@@ -86,7 +174,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                MessageBox.Show("打开链接失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("link.fail", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             e.Handled = true;
         }
@@ -103,15 +191,15 @@ namespace DshNotifyicon
             try
             {
                 btnCheck.IsEnabled = false;
-                txtCheckStatus.Text = "正在检查…";
+                txtCheckStatus.Text = Loc.T("env.checking");
                 var s = App.Services.Settings;
                 var items = await EnvironmentCheckService.CheckAllAsync(s, App.Services.EnvPath, line => SetCheckStatus(line));
                 ApplyEnvItems(items);
-                txtCheckStatus.Text = "检查完成";
+                txtCheckStatus.Text = Loc.T("env.checkDone");
             }
             catch (Exception ex)
             {
-                txtCheckStatus.Text = "检查失败: " + ex.Message;
+                txtCheckStatus.Text = Loc.T("env.checkFailed", ex.Message);
             }
             finally
             {
@@ -145,7 +233,7 @@ namespace DshNotifyicon
                         break;
                     case "dsh":
                         txtDsh.Text = StatusPrefix(item.Status) + detail;
-                        btnInstallDsh.Content = item.Status == EnvStatus.Missing ? "安装 dsh" : "更新 dsh";
+                        btnInstallDsh.Content = item.Status == EnvStatus.Missing ? Loc.T("env.installDshShort") : Loc.T("env.updateDshShort");
                         break;
                 }
             }
@@ -166,14 +254,14 @@ namespace DshNotifyicon
         {
             if (_opActive) { CancelOp(); return; }
             await RunLongOpAsync(
-                "安装 Node.js",
+                Loc.T("env.installNodeTitle"),
                 btnInstallNode, null,
                 async (log, ct) =>
                 {
                     var ok = await NodeService.InstallNodeAsync(log, ct);
-                    if (!ok) throw new Exception("安装未成功，详见日志（可手动从 nodejs.org 下载安装）");
+                    if (!ok) throw new Exception(Loc.T("env.installNodeFail"));
                     App.Services.RefreshEnvPath();
-                    log("安装完成，正在验证…");
+                    log(Loc.T("env.verifyAfterInstall"));
                     // 轮询检测（最多 ~15s），确保新安装的 node 立即可见（走刷新后的 PATH）
                     var s = App.Services.Settings;
                     var node = await NodeService.DetectAsync(s.NodePath, App.Services.EnvPath);
@@ -183,8 +271,8 @@ namespace DshNotifyicon
                         node = await NodeService.DetectAsync(s.NodePath, App.Services.EnvPath);
                     }
                     log(node.NodeExe != null
-                        ? "检测到 Node.js: " + node.NodeVersion
-                        : "未检测到可执行文件（可尝试重新体检或检查安装路径）");
+                        ? Loc.T("env.nodeDetected", node.NodeVersion)
+                        : Loc.T("env.nodeNotFound"));
                 },
                 RunEnvCheckAsync);
         }
@@ -209,12 +297,12 @@ namespace DshNotifyicon
             var url = SelectedMirrorUrl();
             if (cmbMirror.SelectedIndex == 2 && url.Length == 0)
             {
-                MessageBox.Show("请输入自定义 registry URL", "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("env.customUrlReq"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             App.Services.Settings.MirrorUrl = url;
             SettingsService.Save(App.Services.Settings);
-            txtCheckStatus.Text = "已应用镜像: " + (url.Length == 0 ? "跟随 npm 全局配置" : url);
+            txtCheckStatus.Text = Loc.T("env.mirrorApplied", url.Length == 0 ? Loc.T("env.followGlobal") : url);
             await RunEnvCheckAsync();
         }
 
@@ -223,21 +311,21 @@ namespace DshNotifyicon
             var url = SelectedMirrorUrl();
             if (url.Length == 0)
             {
-                MessageBox.Show("请先选择或输入一个镜像源", "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("env.mirrorFirst"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var r = MessageBox.Show(
-                "将 registry " + url + " 写入全局 npmrc（影响你所有 npm 命令）。\n\n确定继续？",
-                "写入全局 npmrc", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                Loc.T("env.globalNpmrcConfirm", url),
+                Loc.T("env.globalNpmrcTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
             try
             {
                 await NpmService.SetGlobalRegistryAsync(url, App.Services.EnvPath, line => SetCheckStatus(line));
-                txtCheckStatus.Text = "已写入全局 npmrc";
+                txtCheckStatus.Text = Loc.T("env.globalNpmrcDone");
             }
             catch (Exception ex)
             {
-                txtCheckStatus.Text = "写入失败: " + ex.Message;
+                txtCheckStatus.Text = Loc.T("env.globalNpmrcFail", ex.Message);
             }
             await RunEnvCheckAsync();
         }
@@ -246,13 +334,13 @@ namespace DshNotifyicon
         {
             if (_opActive) { CancelOp(); return; }
             await RunLongOpAsync(
-                "安装 / 更新 dsh",
+                Loc.T("env.dshInstallTitle"),
                 btnInstallDsh, btnCheckUpdate,
                 async (log, ct) =>
                 {
                     await NpmService.InstallOrUpdateDshAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, log, ct);
                     var v = await NpmService.GetDshLocalVersionAsync(App.Services.EnvPath);
-                    log("已安装版本: " + v);
+                    log(Loc.T("env.installedVersion", v));
                 },
                 RunEnvCheckAsync);
         }
@@ -287,7 +375,7 @@ namespace DshNotifyicon
             };
 
             txtCheckStatus.Text = title + "…";
-            if (busyButton != null) busyButton.Content = "取消";
+            if (busyButton != null) busyButton.Content = Loc.T("op.cancel");
             if (disableButton != null) disableButton.IsEnabled = false;
             prgOp.Visibility = Visibility.Visible;
             TraceLog("════ " + title + " ════");
@@ -298,19 +386,19 @@ namespace DshNotifyicon
             {
                 await op(progressSink, ct);
                 succeeded = true;
-                TraceLog("✔ " + title + "完成");
-                txtCheckStatus.Text = title + "完成";
+                TraceLog(Loc.T("op.done", title));
+                txtCheckStatus.Text = Loc.T("op.doneShort", title);
                 if (tabMain.SelectedIndex == logTab) tabMain.SelectedIndex = returnTab; // 用户未手动切走则回目标页
             }
             catch (OperationCanceledException)
             {
-                TraceLog("✖ " + title + "已取消");
-                txtCheckStatus.Text = title + "已取消";
+                TraceLog(Loc.T("op.cancelled", title));
+                txtCheckStatus.Text = Loc.T("op.cancelled", title);
             }
             catch (Exception ex)
             {
-                TraceLog("✖ " + title + "失败: " + ex.Message);
-                txtCheckStatus.Text = title + "失败";
+                TraceLog(Loc.T("op.failed", title, ex.Message));
+                txtCheckStatus.Text = Loc.T("op.failedShort", title);
             }
             finally
             {
@@ -369,7 +457,7 @@ namespace DshNotifyicon
                     {
                         if (!int.TryParse(txtPort.Text.Trim(), out port) || port < 1 || port > 65535)
                         {
-                            Ask("端口必须是 1-65535 之间的整数", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            Ask(Loc.T("svc.portInvalid"), MessageBoxButton.OK, MessageBoxImage.Warning);
                             return false;
                         }
                     }
@@ -379,21 +467,21 @@ namespace DshNotifyicon
                 }
                 if (port < 1 || port > 65535)
                 {
-                    Ask("设置中的端口无效（应为 1-65535 的整数），请在设置页修改", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Ask(Loc.T("svc.portInvalidSettings"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     return false;
                 }
 
                 var node = await NodeService.DetectAsync(s.NodePath);
                 if (node.NodeExe == null)
                 {
-                    Ask("未检测到 Node.js，请先到环境页一键安装", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Ask(Loc.T("svc.noNode"), MessageBoxButton.OK, MessageBoxImage.Information);
                     tabMain.SelectedIndex = 0;
                     return false;
                 }
                 var binJs = await App.Services.DshBinJsAsync();
                 if (binJs == null)
                 {
-                    Ask("未检测到 dsh，请先到环境页安装", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Ask(Loc.T("svc.noDsh"), MessageBoxButton.OK, MessageBoxImage.Information);
                     tabMain.SelectedIndex = 0;
                     return false;
                 }
@@ -403,8 +491,8 @@ namespace DshNotifyicon
                     var pre = await App.Services.Dsh.PreflightAsync(port, random);
                     if (pre.Kind == PreflightKind.PortBusy)
                     {
-                        var r = Ask(pre.Message + "。\n\n是 = 直接打开浏览器访问该端口\n否 = 取消",
-                            MessageBoxButton.YesNo, MessageBoxImage.Question, "端口被占用");
+                        var r = Ask(Loc.T("svc.portBusyChoices", pre.Message),
+                            MessageBoxButton.YesNo, MessageBoxImage.Question, Loc.T("svc.portBusyTitle"));
                         if (r == MessageBoxResult.Yes) App.Services.OpenUrl("http://127.0.0.1:" + port);
                         return false;
                     }
@@ -413,9 +501,8 @@ namespace DshNotifyicon
                         var detail = "";
                         foreach (var inst in pre.Instances) detail += "  PID " + inst.Pid + "\n";
                         var r = Ask(
-                            pre.Message + "：\n" + detail +
-                            "\n是 = 停止这些实例并启动新实例\n否 = 仅打开浏览器\n取消 = 放弃",
-                            MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, "检测到其他 dsh 实例");
+                            Loc.T("svc.externalChoices", pre.Message, detail),
+                            MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, Loc.T("svc.externalTitle"));
                         if (r == MessageBoxResult.No)
                         {
                             App.Services.OpenUrl("http://127.0.0.1:" + (random ? 3080 : port));
@@ -434,7 +521,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                Ask("启动失败: " + ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                Ask(Loc.T("svc.startFailed", ex.Message), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -443,8 +530,9 @@ namespace DshNotifyicon
         /// 弹窗助手：窗口尚未显示（托盘启动）时先显示并激活主窗口作为 owner，
         /// 避免无主弹窗在 Windows 11 上一闪而过或跑到其他窗口后面。
         /// </summary>
-        MessageBoxResult Ask(string text, MessageBoxButton buttons, MessageBoxImage icon, string title = "DSH 托盘助手")
+        MessageBoxResult Ask(string text, MessageBoxButton buttons, MessageBoxImage icon, string title = null)
         {
+            if (title == null) title = Loc.T("app.name");
             if (!IsLoaded) ShowOrActivate();
             return MessageBox.Show(this, text, title, buttons, icon);
         }
@@ -483,20 +571,20 @@ namespace DshNotifyicon
                 switch (state)
                 {
                     case DshState.Running:
-                        txtServiceStatus.Text = "● 运行中: " + App.Services.Dsh.Url;
+                        txtServiceStatus.Text = Loc.T("svc.running", App.Services.Dsh.Url);
                         break;
                     case DshState.Starting:
-                        txtServiceStatus.Text = "… 正在启动（首次启动需初始化 profile，可能较慢，请观察日志）";
+                        txtServiceStatus.Text = Loc.T("svc.starting");
                         break;
                     case DshState.Stopping:
-                        txtServiceStatus.Text = "… 正在停止";
+                        txtServiceStatus.Text = Loc.T("svc.stopping");
                         break;
                     case DshState.Error:
-                        txtServiceStatus.Text = "✗ 启动失败（查看下方日志定位原因）";
-                        App.Services.Tray.ShowBalloon("DSH 启动失败", "请查看主窗口日志面板");
+                        txtServiceStatus.Text = Loc.T("svc.error");
+                        App.Services.Tray.ShowBalloon(Loc.T("svc.startFailBalloonTitle"), Loc.T("svc.startFailBalloonText"));
                         break;
                     default:
-                        txtServiceStatus.Text = "○ 未运行";
+                        txtServiceStatus.Text = Loc.T("svc.idle");
                         break;
                 }
             }
@@ -575,7 +663,7 @@ namespace DshNotifyicon
                 if (!s.RandomPort && s.Port > 0 && s.Port <= 65535) url = "http://127.0.0.1:" + s.Port;
             }
             if (string.IsNullOrEmpty(url))
-                App.Services.Tray.ShowBalloon("DSH 未运行", "请先启动 DSH 服务");
+                App.Services.Tray.ShowBalloon(Loc.T("svc.notRunning"), Loc.T("svc.startFirst"));
             else
                 App.Services.OpenUrl(url);
         }
@@ -589,7 +677,7 @@ namespace DshNotifyicon
                 if (!s.RandomPort && s.Port > 0 && s.Port <= 65535) url = "http://127.0.0.1:" + s.Port;
             }
             if (string.IsNullOrEmpty(url))
-                App.Services.Tray.ShowBalloon("DSH 未运行", "请先启动 DSH 服务");
+                App.Services.Tray.ShowBalloon(Loc.T("svc.notRunning"), Loc.T("svc.startFirst"));
             else
                 App.Services.CopyUrl(url);
         }
@@ -598,18 +686,52 @@ namespace DshNotifyicon
 
         void LoadSettingsIntoUi()
         {
-            var s = App.Services.Settings;
-            txtPort.Text = s.Port.ToString();
-            txtPort.IsEnabled = !s.RandomPort;
-            chkRandomPort.IsChecked = s.RandomPort;
-            chkAutoOpen.IsChecked = s.AutoOpenBrowser;
-            chkAutoStart.IsChecked = s.AutoStartOnLogin;
-            chkShowMain.IsChecked = s.ShowMainWindowOnStartup;
-            txtTrustedHosts.Text = s.TrustedHosts;
-            txtNodePath.Text = s.NodePath;
-            if (s.MirrorUrl == "https://registry.npmmirror.com") cmbMirror.SelectedIndex = 1;
-            else if (s.MirrorUrl.Length > 0) { cmbMirror.SelectedIndex = 2; txtCustomMirror.Text = s.MirrorUrl; }
-            else cmbMirror.SelectedIndex = 0;
+            _loadingUi = true;
+            try
+            {
+                var s = App.Services.Settings;
+                txtPort.Text = s.Port.ToString();
+                txtPort.IsEnabled = !s.RandomPort;
+                chkRandomPort.IsChecked = s.RandomPort;
+                chkAutoOpen.IsChecked = s.AutoOpenBrowser;
+                chkAutoStart.IsChecked = s.AutoStartOnLogin;
+                chkShowMain.IsChecked = s.ShowMainWindowOnStartup;
+                txtTrustedHosts.Text = s.TrustedHosts;
+                txtNodePath.Text = s.NodePath;
+                cmbLang.SelectedIndex = LangIndexFromSetting(s.Language);
+                if (s.MirrorUrl == "https://registry.npmmirror.com") cmbMirror.SelectedIndex = 1;
+                else if (s.MirrorUrl.Length > 0) { cmbMirror.SelectedIndex = 2; txtCustomMirror.Text = s.MirrorUrl; }
+                else cmbMirror.SelectedIndex = 0;
+            }
+            finally
+            {
+                _loadingUi = false;
+            }
+        }
+
+        static int LangIndexFromSetting(string v)
+        {
+            if (string.Equals(v, "zh", StringComparison.OrdinalIgnoreCase)) return 1;
+            if (string.Equals(v, "en", StringComparison.OrdinalIgnoreCase)) return 2;
+            return 0;
+        }
+
+        static string LangSettingFromIndex(int i)
+        {
+            if (i == 1) return "zh";
+            if (i == 2) return "en";
+            return "auto";
+        }
+
+        /// <summary>界面语言切换：立即生效 + 持久化。</summary>
+        void CmbLang_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingUi) return;
+            var v = LangSettingFromIndex(cmbLang.SelectedIndex);
+            if (v == null) return;
+            App.Services.Settings.Language = v;
+            SettingsService.Save(App.Services.Settings);
+            Loc.Apply(v);
         }
 
         void ChkRandomPort_Changed(object sender, RoutedEventArgs e)
@@ -623,7 +745,7 @@ namespace DshNotifyicon
             int port;
             if (!int.TryParse(txtPort.Text.Trim(), out port) || port < 1 || port > 65535)
             {
-                MessageBox.Show("端口必须是 1-65535 之间的整数", "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("svc.portInvalid"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             s.Port = port;
@@ -632,12 +754,13 @@ namespace DshNotifyicon
             s.ShowMainWindowOnStartup = chkShowMain.IsChecked == true;
             s.TrustedHosts = (txtTrustedHosts.Text ?? "").Trim();
             s.NodePath = (txtNodePath.Text ?? "").Trim();
+            s.Language = LangSettingFromIndex(cmbLang.SelectedIndex);
             bool autoStartChanged = s.AutoStartOnLogin != (chkAutoStart.IsChecked == true);
             s.AutoStartOnLogin = chkAutoStart.IsChecked == true;
             if (autoStartChanged) App.Services.ToggleAutoStart(s.AutoStartOnLogin);
             SettingsService.Save(s);
-            txtCheckStatus.Text = "设置已保存";
-            MessageBox.Show("设置已保存", "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Information);
+            txtCheckStatus.Text = Loc.T("set.saved");
+            MessageBox.Show(Loc.T("set.saved"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         void BtnOpenSettingsDir_Click(object sender, RoutedEventArgs e)
@@ -649,7 +772,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                MessageBox.Show("打开失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("set.openDirFail", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -661,32 +784,27 @@ namespace DshNotifyicon
         {
             if (_opActive) { CancelOp(); return; }
             var r = Ask(
-                "将执行以下清理：\n\n" +
-                "1. 停止正在运行的 dsh 服务\n" +
-                "2. 卸载全局 npm 包 @deepseek-ai/dsh\n" +
-                "3. 将数据目录（含 API 凭据与会话记录）重命名备份为 .dsh.bak-日期（不直接删除，可恢复）\n" +
-                "4. 移除本工具的开机自启项\n\n" +
-                "不会卸载 Node.js。确定继续？",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning, "清理 dsh 环境");
+                Loc.T("cleanup.confirm"),
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, Loc.T("cleanup.confirmTitle"));
             if (r != MessageBoxResult.Yes) return;
 
-            await RunLongOpAsync("清理 dsh 环境", btnCleanup, null, async (log, ct) =>
+            await RunLongOpAsync(Loc.T("cleanup.title"), btnCleanup, null, async (log, ct) =>
             {
                 // 1. 停止 dsh
                 if (App.Services.Dsh.State != DshState.Idle)
                 {
-                    log("停止 dsh 服务…");
+                    log(Loc.T("cleanup.stopLog"));
                     await App.Services.Dsh.StopAsync();
                 }
                 else
                 {
-                    log("dsh 未在运行，跳过停止");
+                    log(Loc.T("cleanup.skipStop"));
                 }
 
                 // 2. 卸载全局 npm 包
-                log("卸载全局包 @deepseek-ai/dsh…");
+                log(Loc.T("cleanup.uninstallLog"));
                 await NpmService.UninstallDshAsync(App.Services.EnvPath, log, ct);
-                log("npm 全局包已卸载");
+                log(Loc.T("cleanup.uninstallDone"));
 
                 // 3. 数据目录改名备份（尊重 DSH_HOME 覆盖）
                 var home = Environment.GetEnvironmentVariable("DSH_HOME");
@@ -695,17 +813,17 @@ namespace DshNotifyicon
                 if (System.IO.Directory.Exists(home))
                 {
                     var bak = home + ".bak-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                    log("数据目录备份为: " + bak + "（含凭据，确认不再需要后可手动删除）");
+                    log(Loc.T("cleanup.backupLog", bak));
                     System.IO.Directory.Move(home, bak);
                 }
                 else
                 {
-                    log("未发现数据目录 " + home + "，跳过备份");
+                    log(Loc.T("cleanup.noHome", home));
                 }
 
                 // 4. 移除开机自启
                 if (App.Services.Settings.AutoStartOnLogin) App.Services.ToggleAutoStart(false);
-                log("清理完成。本工具删除自身文件夹即卸载；设置目录可一并删除: " + SettingsService.SettingsDir);
+                log(Loc.T("cleanup.done", SettingsService.SettingsDir));
             }, RunEnvCheckAsync, logTab: 1, returnTab: 2);
         }
     }

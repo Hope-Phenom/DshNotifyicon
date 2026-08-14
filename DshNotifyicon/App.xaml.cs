@@ -65,6 +65,8 @@ namespace DshNotifyicon
             watcher.Start();
 
             var settings = SettingsService.Load();
+            // 界面语言：auto = 跟随系统；显式 zh/en 覆盖。在创建任何 UI 前应用。
+            Loc.Apply(settings.Language);
             Services = new AppServices(settings);
 
             var actions = new TrayActions
@@ -88,7 +90,7 @@ namespace DshNotifyicon
             DispatcherUnhandledException += (s, args) =>
             {
                 WriteCrashLog(args.Exception, "Dispatcher");
-                try { Services.Tray.ShowBalloon("DSH 托盘助手", "发生错误: " + args.Exception.Message); } catch { }
+                try { Services.Tray.ShowBalloon(Loc.T("app.name"), Loc.T("app.errBalloon", args.Exception.Message)); } catch { }
                 args.Handled = true;
             };
 
@@ -102,8 +104,8 @@ namespace DshNotifyicon
                         .Where(f => File.GetLastWriteTime(f) > DateTime.Now.AddHours(-24)).ToArray();
                     if (recent.Length > 0)
                         Dispatcher.BeginInvoke(new Action(() =>
-                            Services.Tray.ShowBalloon("DSH 托盘助手",
-                                "检测到最近一次运行发生异常，详情已记录: " + string.Join("; ", recent.Select(f => System.IO.Path.GetFileName(f))))));
+                            Services.Tray.ShowBalloon(Loc.T("app.name"),
+                                Loc.T("app.crashRecent", string.Join("; ", recent.Select(f => System.IO.Path.GetFileName(f)))))));
                 }
             }
             catch { }
@@ -134,7 +136,7 @@ namespace DshNotifyicon
                 try
                 {
                     if (Services != null && Services.Tray != null)
-                        Services.Tray.ShowBalloon("DSH 托盘助手", "发生内部错误，详情已记录: " + path);
+                        Services.Tray.ShowBalloon(Loc.T("app.name"), Loc.T("app.crashInternal", path));
                 }
                 catch { }
             }
@@ -151,13 +153,13 @@ namespace DshNotifyicon
             Services.Dsh.Ready += url =>
             {
                 Services.Tray.SetState(DshState.Running, url);
-                Services.Tray.ShowBalloon("DSH 已启动", "Web UI: " + url);
+                Services.Tray.ShowBalloon(Loc.T("app.startedTitle"), Loc.T("app.startedText", url));
                 if (Services.Settings.AutoOpenBrowser) Services.OpenUrl(url);
             };
             Services.Dsh.Exited += info =>
             {
                 Services.Tray.SetState(DshState.Idle, null);
-                Services.Tray.ShowBalloon("DSH 已退出", info);
+                Services.Tray.ShowBalloon(Loc.T("app.exitedTitle"), info);
             };
             Services.Dsh.LogLine += line => Services.Main.TraceLog(line);
         }

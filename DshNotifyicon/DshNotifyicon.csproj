@@ -81,6 +81,7 @@
     <Compile Include="Services\NpmService.cs" />
     <Compile Include="Services\DshProcessManager.cs" />
     <Compile Include="Services\EnvironmentCheckService.cs" />
+    <Compile Include="Services\Localization.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

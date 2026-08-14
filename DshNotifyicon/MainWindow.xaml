@@ -13,7 +13,7 @@
     <TabControl x:Name="tabMain" Margin="8">
 
         <!-- ── 环境 ── -->
-        <TabItem Header="环境">
+        <TabItem x:Name="tabEnv" Header="环境">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="12">
                     <StackPanel Orientation="Horizontal">
@@ -22,14 +22,14 @@
                     </StackPanel>
                     <ProgressBar x:Name="prgOp" Height="6" Margin="0,10,0,0" IsIndeterminate="True" Visibility="Collapsed"/>
 
-                    <GroupBox Header="Node.js 运行环境" Margin="0,12,0,0">
+                    <GroupBox x:Name="gbNode" Header="Node.js 运行环境" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock x:Name="txtNode" TextWrapping="Wrap"/>
                             <Button x:Name="btnInstallNode" Content="一键安装 Node.js" Width="150" HorizontalAlignment="Left" Margin="0,8,0,0" Visibility="Collapsed" Click="BtnInstallNode_Click"/>
                         </StackPanel>
                     </GroupBox>
 
-                    <GroupBox Header="npm 镜像源（仅对本工具生效，不修改全局配置）" Margin="0,12,0,0">
+                    <GroupBox x:Name="gbMirror" Header="npm 镜像源（仅对本工具生效，不修改全局配置）" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock x:Name="txtRegistry" TextWrapping="Wrap"/>
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -45,7 +45,7 @@
                         </StackPanel>
                     </GroupBox>
 
-                    <GroupBox Header="dsh 安装与版本" Margin="0,12,0,0">
+                    <GroupBox x:Name="gbDsh" Header="dsh 安装与版本" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock x:Name="txtDsh" TextWrapping="Wrap"/>
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -59,7 +59,7 @@
         </TabItem>
 
         <!-- ── 服务 ── -->
-        <TabItem Header="服务">
+        <TabItem x:Name="tabService" Header="服务">
             <Grid Margin="12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -70,11 +70,11 @@
 
                 <StackPanel Grid.Row="0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="端口:" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="lblPort" Text="端口:" VerticalAlignment="Center"/>
                         <TextBox x:Name="txtPort" Width="90" Margin="6,0,0,0"/>
                         <CheckBox x:Name="chkRandomPort" Content="随机端口（--port 0）" Margin="12,0,0,0" VerticalAlignment="Center" Checked="ChkRandomPort_Changed" Unchecked="ChkRandomPort_Changed"/>
                     </StackPanel>
-                    <TextBlock Text="绑定地址: 127.0.0.1（dsh 仅支持回环地址）" Foreground="Gray" Margin="0,4,0,0"/>
+                    <TextBlock x:Name="lblBind" Text="绑定地址: 127.0.0.1（dsh 仅支持回环地址）" Foreground="Gray" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
@@ -91,7 +91,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="运行日志（dsh 输出与操作记录）:" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="lblLog" Grid.Row="0" Text="运行日志（dsh 输出与操作记录）:" Margin="0,0,0,4"/>
                     <TextBox x:Name="txtLog" Grid.Row="1" IsReadOnly="True" TextWrapping="NoWrap" AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                              FontFamily="Consolas" FontSize="12"/>
@@ -100,26 +100,37 @@
         </TabItem>
 
         <!-- ── 设置 ── -->
-        <TabItem Header="设置">
+        <TabItem x:Name="tabSettings" Header="设置">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="12">
                     <CheckBox x:Name="chkAutoOpen" Content="启动 DSH 成功后自动打开浏览器" Margin="0,4,0,0"/>
                     <CheckBox x:Name="chkAutoStart" Content="开机自动启动本工具" Margin="0,10,0,0"/>
                     <CheckBox x:Name="chkShowMain" Content="启动时显示主窗口（默认隐藏到托盘）" Margin="0,10,0,0"/>
-                    <TextBlock Text="退出本工具时会自动停止 DSH 服务" Foreground="Gray" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="lblExitNote" Text="退出本工具时会自动停止 DSH 服务" Foreground="Gray" Margin="0,10,0,0"/>
 
-                    <GroupBox Header="高级" Margin="0,16,0,0">
+                    <GroupBox x:Name="gbLang" Header="界面语言" Margin="0,16,0,0">
                         <StackPanel>
-                            <TextBlock Text="trusted-host（可选，逗号/分号分隔，可重复传给 dsh）:"/>
+                            <ComboBox x:Name="cmbLang" Width="220" HorizontalAlignment="Left" SelectionChanged="CmbLang_SelectionChanged">
+                                <ComboBoxItem/>
+                                <ComboBoxItem/>
+                                <ComboBoxItem/>
+                            </ComboBox>
+                            <TextBlock x:Name="lblLangHint" Foreground="Gray" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox x:Name="gbAdvanced" Header="高级" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="lblTrusted" Text="trusted-host（可选，逗号/分号分隔，可重复传给 dsh）:"/>
                             <TextBox x:Name="txtTrustedHosts" Margin="0,4,0,0"/>
-                            <TextBlock Text="Node.js 可执行文件路径（留空自动检测）:" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="lblNodePath" Text="Node.js 可执行文件路径（留空自动检测）:" Margin="0,10,0,0"/>
                             <TextBox x:Name="txtNodePath" Margin="0,4,0,0"/>
                         </StackPanel>
                     </GroupBox>
 
-                    <GroupBox Header="清理" Margin="0,16,0,0">
+                    <GroupBox x:Name="gbCleanup" Header="清理" Margin="0,16,0,0">
                         <StackPanel>
-                            <TextBlock TextWrapping="Wrap" Foreground="Gray"
+                            <TextBlock x:Name="lblCleanupDesc" TextWrapping="Wrap" Foreground="Gray"
                                        Text="移除 dsh 相关环境：停止 dsh 服务 → 卸载全局 npm 包 @deepseek-ai/dsh → 将数据目录（含 API 凭据与会话）重命名备份为 .dsh.bak-日期（不直接删除）。不会卸载 Node.js；如确需卸载 Node.js，请到系统 设置→应用 或执行 winget uninstall OpenJS.NodeJS.LTS。"/>
                             <Button x:Name="btnCleanup" Content="清理 dsh 环境…" Width="140" HorizontalAlignment="Left" Margin="0,8,0,0" Click="BtnCleanup_Click"/>
                         </StackPanel>
@@ -134,45 +145,45 @@
         </TabItem>
 
         <!-- ── 关于 ── -->
-        <TabItem Header="关于">
+        <TabItem x:Name="tabAbout" Header="关于">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="24" MaxWidth="560">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="pack://application:,,,/Assets/app.ico" Width="48" Height="48" RenderOptions.BitmapScalingMode="HighQuality"/>
                         <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="DSH 托盘助手" FontSize="20" FontWeight="Bold"/>
+                            <TextBlock x:Name="txtAboutName" Text="DSH 托盘助手" FontSize="20" FontWeight="Bold"/>
                             <TextBlock x:Name="txtAboutVersion" Foreground="Gray" Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
-                    <TextBlock TextWrapping="Wrap" Margin="0,16,0,0"
+                    <TextBlock x:Name="txtAboutDesc" TextWrapping="Wrap" Margin="0,16,0,0"
                                Text="DeepSeek Harness（dsh）的桌面托盘助手：一键完成环境配置（Node.js / npm 镜像源 / dsh 安装与更新）与 Web UI 启停，自动解析实际地址并打开浏览器——无需手动打开命令行窗口。"/>
 
-                    <GroupBox Header="技术栈" Margin="0,16,0,0">
+                    <GroupBox x:Name="gbTech" Header="技术栈" Margin="0,16,0,0">
                         <StackPanel>
-                            <TextBlock Text="· WPF · .NET Framework 4.6.2 · C# 7.3"/>
-                            <TextBlock Text="· Hardcodet.NotifyIcon.Wpf（托盘）· Newtonsoft.Json（设置）" Margin="0,4,0,0"/>
-                            <TextBlock Text="· 服务对象：DeepSeek Harness CLI（dsh）" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="txtTech1" Text="· WPF · .NET Framework 4.6.2 · C# 7.3"/>
+                            <TextBlock x:Name="txtTech2" Text="· Hardcodet.NotifyIcon.Wpf（托盘）· Newtonsoft.Json（设置）" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="txtTech3" Text="· 服务对象：DeepSeek Harness CLI（dsh）" Margin="0,4,0,0"/>
                         </StackPanel>
                     </GroupBox>
 
-                    <GroupBox Header="链接" Margin="0,12,0,0">
+                    <GroupBox x:Name="gbLinks" Header="链接" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock TextWrapping="Wrap">
-                                <Run Text="DeepSeek Harness: "/>
+                                <Run x:Name="runLinkDh" Text="DeepSeek Harness: "/>
                                 <Hyperlink NavigateUri="https://github.com/deepseek-ai/deepseek-harness" RequestNavigate="Hyperlink_RequestNavigate">github.com/deepseek-ai/deepseek-harness</Hyperlink>
                             </TextBlock>
                             <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
-                                <Run Text="本工具仓库: "/>
+                                <Run x:Name="runLinkRepo" Text="本工具仓库: "/>
                                 <Hyperlink NavigateUri="https://github.com/Hope-Phenom/DshNotifyicon" RequestNavigate="Hyperlink_RequestNavigate">github.com/Hope-Phenom/DshNotifyicon</Hyperlink>
                             </TextBlock>
                         </StackPanel>
                     </GroupBox>
 
-                    <GroupBox Header="版权与致谢" Margin="0,12,0,0">
+                    <GroupBox x:Name="gbLicense" Header="版权与致谢" Margin="0,12,0,0">
                         <StackPanel>
-                            <TextBlock TextWrapping="Wrap" Text="License: MIT（见仓库 LICENSE.txt）"/>
-                            <TextBlock TextWrapping="Wrap" Margin="0,6,0,0"
+                            <TextBlock x:Name="txtLicense" TextWrapping="Wrap" Text="License: MIT（见仓库 LICENSE.txt）"/>
+                            <TextBlock x:Name="txtCredits" TextWrapping="Wrap" Margin="0,6,0,0"
                                        Text="图标基于 DeepSeek 官方 favicon 渲染；感谢 DeepSeek Harness 团队以及 Hardcodet.NotifyIcon.Wpf、Newtonsoft.Json 开源项目。"/>
                         </StackPanel>
                     </GroupBox>

@@ -136,7 +136,7 @@ namespace DshNotifyicon.Services
             // 1) winget
             try
             {
-                log("尝试 winget 安装 OpenJS.NodeJS.LTS …（可能弹出 UAC 确认）");
+                log(Loc.T("node.wingetTry"));
                 var r = await ProcessRunner.RunAsync(new ProcessSpec
                 {
                     FileName = "winget.exe",
@@ -144,11 +144,11 @@ namespace DshNotifyicon.Services
                     TimeoutMs = 15 * 60 * 1000
                 }, ct, log);
                 if (!r.TimedOut && !r.Cancelled && r.ExitCode == 0) return true;
-                log("winget 未成功（exit " + r.ExitCode + "），改用官方 MSI 安装…");
+                log(Loc.T("node.wingetFail", r.ExitCode));
             }
             catch (Exception ex)
             {
-                log("winget 不可用（" + ex.Message + "），改用官方 MSI 安装…");
+                log(Loc.T("node.wingetUnavailable", ex.Message));
             }
 
             // 2) 官方 MSI
@@ -157,7 +157,7 @@ namespace DshNotifyicon.Services
                 using (var http = new HttpClient())
                 {
                     http.Timeout = TimeSpan.FromSeconds(60);
-                    log("获取最新 LTS 版本信息…");
+                    log(Loc.T("node.fetchLts"));
                     var idx = await http.GetStringAsync("https://nodejs.org/dist/index.json");
                     string version = null;
                     foreach (var item in JArray.Parse(idx))
@@ -168,13 +168,13 @@ namespace DshNotifyicon.Services
                             break;
                         }
                     }
-                    if (version == null) { log("无法从 nodejs.org 获取最新 LTS 版本"); return false; }
+                    if (version == null) { log(Loc.T("node.ltsFail")); return false; }
                     var url = "https://nodejs.org/dist/" + version + "/node-" + version + "-x64.msi";
                     var msi = Path.Combine(Path.GetTempPath(), "node-" + version + "-x64.msi");
-                    log("下载 " + url);
+                    log(Loc.T("node.download", url));
                     var bytes = await http.GetByteArrayAsync(url);
                     File.WriteAllBytes(msi, bytes);
-                    log("下载完成，启动静默安装（可能弹出 UAC 确认）…");
+                    log(Loc.T("node.downloadDone"));
                     var mr = await ProcessRunner.RunAsync(new ProcessSpec
                     {
                         FileName = "msiexec.exe",
@@ -183,15 +183,15 @@ namespace DshNotifyicon.Services
                     }, ct, log);
                     if (mr.ExitCode == 0 || mr.ExitCode == 3010) return true;
                     if (mr.ExitCode == 1602)
-                        log("安装被取消（UAC 未确认）。可手动从 https://nodejs.org/zh-cn/download 下载安装。");
+                        log(Loc.T("node.installCancelled", Loc.T("node.downloadUrl")));
                     else
-                        log("MSI 安装失败，退出码 " + mr.ExitCode + "。可手动从 https://nodejs.org/zh-cn/download 下载安装。");
+                        log(Loc.T("node.msiFail", mr.ExitCode, Loc.T("node.downloadUrl")));
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                log("MSI 安装失败: " + ex.Message);
+                log(Loc.T("node.msiFailMsg", ex.Message));
                 return false;
             }
         }

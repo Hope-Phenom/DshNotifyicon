@@ -35,6 +35,7 @@ namespace DshNotifyicon.Services
     /// <summary>
     /// dsh web 服务进程生命周期：命令行拼接、隐藏启动、URL 解析、健康探测、树杀停止。
     /// 状态机 Idle/Starting/Running/Stopping/Error；所有操作经信号量互斥。
+    /// 日志文案走 Loc（中英双语，随界面语言切换）。
     /// </summary>
     public class DshProcessManager
     {
@@ -136,7 +137,7 @@ namespace DshNotifyicon.Services
             if (!randomPort && port != 0 && IsPortBusy(port))
             {
                 r.Kind = PreflightKind.PortBusy;
-                r.Message = "端口 " + port + " 已被占用，可能已有 dsh 或其他服务在运行";
+                r.Message = Loc.T("dsh.portBusy", port);
                 return r;
             }
             var inst = await ScanExternalInstancesAsync();
@@ -144,7 +145,7 @@ namespace DshNotifyicon.Services
             {
                 r.Kind = PreflightKind.ExternalInstances;
                 r.Instances = inst;
-                r.Message = "检测到 " + inst.Count + " 个正在运行的 dsh 实例。双实例并发写同一数据目录可能损坏会话，请选择处理方式";
+                r.Message = Loc.T("dsh.externalFound", inst.Count);
             }
             return r;
         }
@@ -157,7 +158,7 @@ namespace DshNotifyicon.Services
             {
                 if (_state == DshState.Running || _state == DshState.Starting)
                 {
-                    Log("dsh 已在运行");
+                    Log(Loc.T("dsh.alreadyRunning"));
                     return true;
                 }
                 SetState(DshState.Starting);
@@ -172,7 +173,7 @@ namespace DshNotifyicon.Services
                     foreach (var h in trustedHosts.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
                         args += " --trusted-host " + ProcessRunner.Quote(h.Trim());
                 }
-                Log("启动: " + nodeExe + " " + args);
+                Log(Loc.T("dsh.starting", nodeExe, args));
 
                 var urlHolder = new string[1];
                 var exitedTcs = new TaskCompletionSource<bool>();
@@ -190,7 +191,7 @@ namespace DshNotifyicon.Services
                 }
                 catch (Exception ex)
                 {
-                    Log("启动失败: " + ex.Message);
+                    Log(Loc.T("dsh.startFail", ex.Message));
                     SetState(DshState.Error);
                     return false;
                 }
@@ -207,8 +208,8 @@ namespace DshNotifyicon.Services
                         Url = null;
                         ProcessId = null;
                         SetState(DshState.Idle);
-                        Log("dsh 进程意外退出（exit " + code + "）");
-                        try { Exited?.Invoke("dsh 进程意外退出（exit " + code + "）。会话已持久化，重新启动即可继续。"); } catch { }
+                        Log(Loc.T("dsh.exited", code));
+                        try { Exited?.Invoke(Loc.T("dsh.exitedMsg", code)); } catch { }
                     }
                 };
                 ProcessId = proc.Id;
@@ -231,17 +232,17 @@ namespace DshNotifyicon.Services
                 bool healthy = false;
                 if (probePort != 0)
                 {
-                    if (url != null) Log("已解析 URL: " + url);
+                    if (url != null) Log(Loc.T("dsh.urlParsed", url));
                     healthy = await ProbeHealthyAsync(probePort, deadline);
                 }
                 else
                 {
-                    Log("未解析到 URL 且端口由 OS 分配，无法确认服务地址");
+                    Log(Loc.T("dsh.urlUnresolved"));
                 }
 
                 if (proc.HasExited && !healthy)
                 {
-                    Log("dsh 进程提前退出，exit code " + SafeExitCode(proc) + "。查看上方日志定位原因（如端口占用）。");
+                    Log(Loc.T("dsh.earlyExit", SafeExitCode(proc)));
                     _proc = null;
                     ProcessId = null;
                     SetState(DshState.Error);
@@ -249,7 +250,7 @@ namespace DshNotifyicon.Services
                 }
                 if (!healthy)
                 {
-                    Log("服务在超时时间内未就绪（120s）。可能首次初始化 profile 较慢，可查看日志重试。");
+                    Log(Loc.T("dsh.notReady"));
                     StopLocked();
                     SetState(DshState.Error);
                     return false;
@@ -257,7 +258,7 @@ namespace DshNotifyicon.Services
 
                 Url = url ?? ("http://127.0.0.1:" + probePort);
                 SetState(DshState.Running);
-                Log("dsh 已就绪: " + Url);
+                Log(Loc.T("dsh.ready", Url));
                 try { Ready?.Invoke(Url); } catch { } // 订阅者异常隔离
                 return true;
             }
@@ -288,14 +289,14 @@ namespace DshNotifyicon.Services
             }
             _stoppingByUs = true;
             SetState(DshState.Stopping);
-            Log("停止 dsh（PID " + p.Id + "）…");
+            Log(Loc.T("dsh.stop", p.Id));
             ProcessRunner.KillTree(p);
             try { p.WaitForExit(5000); } catch { }
             _proc = null;
             Url = null;
             ProcessId = null;
             SetState(DshState.Idle);
-            Log("dsh 已停止。注：强停不保证优雅停机，会话至多丢失约 5 秒尾部。");
+            Log(Loc.T("dsh.stopped"));
         }
 
         void OnProcLine(string line, string[] urlHolder)

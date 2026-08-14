@@ -82,8 +82,8 @@ namespace DshNotifyicon.Services
         {
             // 用刷新后的 PATH 检测 node（Node 刚安装后立即可用）
             var node = await NodeService.DetectAsync(null, envPath);
-            if (node.NodeExe == null) throw new InvalidOperationException("未检测到 Node.js，请先在环境页安装");
-            if (node.NpmCliJs == null) throw new InvalidOperationException("未找到 npm-cli.js（Node.js 安装可能不完整）");
+            if (node.NodeExe == null) throw new InvalidOperationException(Loc.T("npm.noNode"));
+            if (node.NpmCliJs == null) throw new InvalidOperationException(Loc.T("npm.noCli"));
             var spec = new ProcessSpec
             {
                 FileName = node.NodeExe,
@@ -93,10 +93,10 @@ namespace DshNotifyicon.Services
                 Environment = new Dictionary<string, string> { { "Path", envPath } }
             };
             var r = await ProcessRunner.RunAsync(spec, ct, log);
-            if (r.TimedOut) throw new TimeoutException("npm 命令超时（" + args + "）");
+            if (r.TimedOut) throw new TimeoutException(Loc.T("npm.timeout", args));
             if (r.Cancelled) throw new OperationCanceledException();
             if (r.ExitCode != 0)
-                throw new InvalidOperationException("npm 命令失败（exit " + r.ExitCode + "）:\n" + r.Output + r.Error);
+                throw new InvalidOperationException(Loc.T("npm.fail", r.ExitCode, r.Output, r.Error));
             return r.Output;
         }
 
@@ -169,7 +169,7 @@ namespace DshNotifyicon.Services
                 if (major >= 11)
                 {
                     args += " --allow-scripts=koffi,node-pty,@google/genai,protobufjs,@deepseek-ai/dsh-subprocess-local";
-                    log("检测到 npm " + nv + "，附加 --allow-scripts 以构建原生依赖");
+                    log(Loc.T("npm.allowScripts", nv));
                 }
             }
             catch { }

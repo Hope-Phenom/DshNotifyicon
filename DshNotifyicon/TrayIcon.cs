@@ -25,6 +25,7 @@ namespace DshNotifyicon
     /// <summary>
     /// 托盘图标与上下文菜单（Hardcodet.NotifyIcon.Wpf 代码构建）。
     /// 状态切换会更新图标（运行态带绿点）、Tooltip 与菜单可用性。
+    /// 语言切换（Loc.Changed）时刷新全部菜单文案。
     /// </summary>
     public class TrayIcon : IDisposable
     {
@@ -34,39 +35,82 @@ namespace DshNotifyicon
         readonly MenuItem _restartItem;
         readonly MenuItem _openItem;
         readonly MenuItem _copyItem;
+        readonly MenuItem _envItem;
+        readonly MenuItem _winItem;
         readonly MenuItem _autoStartItem;
+        readonly MenuItem _exitItem;
+
+        DshState _lastState = DshState.Idle;
+        string _lastUrl;
 
         public TrayIcon(TrayActions a, Settings settings)
         {
             _tray = new TaskbarIcon();
-            _tray.ToolTipText = "DSH 托盘助手";
 
             var menu = new ContextMenu();
-            _startItem = Item("启动 DSH", a.Start);
-            _stopItem = Item("停止 DSH", a.Stop);
-            _restartItem = Item("重启 DSH", a.Restart);
+            _startItem = Item(Loc.T("tray.start"), a.Start);
+            _stopItem = Item(Loc.T("tray.stop"), a.Stop);
+            _restartItem = Item(Loc.T("tray.restart"), a.Restart);
             menu.Items.Add(_startItem);
             menu.Items.Add(_stopItem);
             menu.Items.Add(_restartItem);
             menu.Items.Add(Sep());
-            _openItem = Item("打开 Web UI", a.OpenUi);
-            _copyItem = Item("复制 URL", a.CopyUrl);
+            _openItem = Item(Loc.T("tray.openUi"), a.OpenUi);
+            _copyItem = Item(Loc.T("tray.copyUrl"), a.CopyUrl);
             menu.Items.Add(_openItem);
             menu.Items.Add(_copyItem);
             menu.Items.Add(Sep());
-            menu.Items.Add(Item("环境体检", a.ShowEnv));
-            menu.Items.Add(Item("打开主窗口", a.ShowWindow));
+            _envItem = Item(Loc.T("tray.envCheck"), a.ShowEnv);
+            _winItem = Item(Loc.T("tray.mainWindow"), a.ShowWindow);
+            menu.Items.Add(_envItem);
+            menu.Items.Add(_winItem);
             menu.Items.Add(Sep());
-            _autoStartItem = Item("开机自启", null);
+            _autoStartItem = Item(Loc.T("tray.autoStart"), null);
             _autoStartItem.IsCheckable = true;
             _autoStartItem.IsChecked = settings.AutoStartOnLogin;
             _autoStartItem.Click += (s, e) => a.ToggleAutoStart(_autoStartItem.IsChecked);
             menu.Items.Add(_autoStartItem);
             menu.Items.Add(Sep());
-            menu.Items.Add(Item("退出", a.Exit));
+            _exitItem = Item(Loc.T("tray.exit"), a.Exit);
+            menu.Items.Add(_exitItem);
             _tray.ContextMenu = menu;
 
+            Loc.Changed += OnLangChanged;
+            ApplyLanguage();
             SetState(DshState.Idle, null);
+        }
+
+        void OnLangChanged(object sender, EventArgs e)
+        {
+            var dispatcher = Application.Current != null ? Application.Current.Dispatcher : null;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                try { dispatcher.BeginInvoke(new Action(ApplyLanguage)); } catch { }
+                return;
+            }
+            ApplyLanguage();
+        }
+
+        /// <summary>刷新全部静态文案（构造时 + 语言切换时）。</summary>
+        void ApplyLanguage()
+        {
+            _startItem.Header = Loc.T("tray.start");
+            _stopItem.Header = Loc.T("tray.stop");
+            _restartItem.Header = Loc.T("tray.restart");
+            _openItem.Header = Loc.T("tray.openUi");
+            _copyItem.Header = Loc.T("tray.copyUrl");
+            _envItem.Header = Loc.T("tray.envCheck");
+            _winItem.Header = Loc.T("tray.mainWindow");
+            _autoStartItem.Header = Loc.T("tray.autoStart");
+            _exitItem.Header = Loc.T("tray.exit");
+            _tray.ToolTipText = ToolTipText();
+        }
+
+        string ToolTipText()
+        {
+            return _lastState == DshState.Running
+                ? Loc.T("tray.running", _lastUrl)
+                : Loc.T("app.name") + " — " + StateText(_lastState);
         }
 
         static MenuItem Item(string header, Action click)
@@ -89,6 +133,8 @@ namespace DshNotifyicon
             }
             try
             {
+                _lastState = state;
+                _lastUrl = url;
                 bool running = state == DshState.Running;
                 bool busy = state == DshState.Starting || state == DshState.Stopping;
                 _startItem.IsEnabled = !running && !busy;
@@ -97,9 +143,7 @@ namespace DshNotifyicon
                 _openItem.IsEnabled = running || url != null;
                 _copyItem.IsEnabled = running || url != null;
                 _tray.IconSource = running ? LoadIcon("app-running.ico") : LoadIcon("app.ico");
-                _tray.ToolTipText = running
-                    ? "DSH 运行中: " + url
-                    : "DSH 托盘助手 — " + StateText(state);
+                _tray.ToolTipText = ToolTipText();
             }
             catch { }
         }
@@ -119,10 +163,10 @@ namespace DshNotifyicon
         {
             switch (s)
             {
-                case DshState.Starting: return "正在启动…";
-                case DshState.Stopping: return "正在停止…";
-                case DshState.Error: return "启动失败";
-                default: return "未运行";
+                case DshState.Starting: return Loc.T("tray.state.starting");
+                case DshState.Stopping: return Loc.T("tray.state.stopping");
+                case DshState.Error: return Loc.T("tray.state.error");
+                default: return Loc.T("tray.state.idle");
             }
         }
 
@@ -133,6 +177,7 @@ namespace DshNotifyicon
 
         public void Dispose()
         {
+            try { Loc.Changed -= OnLangChanged; } catch { }
             try { _tray.Dispose(); } catch { }
         }
     }

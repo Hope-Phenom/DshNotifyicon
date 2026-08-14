@@ -35,6 +35,9 @@ namespace DshNotifyicon.Services
 
         /// <summary>用户手动指定的 node.exe 路径（留空自动检测）。</summary>
         public string NodePath = "";
+
+        /// <summary>界面语言：auto = 跟随系统；zh / en = 手动指定。</summary>
+        public string Language = "auto";
     }
 
     /// <summary>

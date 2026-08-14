@@ -17,6 +17,7 @@ namespace DshNotifyicon.Services
     /// <summary>
     /// 一键体检：Node.js / npm 镜像源 / dsh 安装与版本，聚合为可展示的条目列表。
     /// 整体限时 120s（取消信号贯穿 npm 子进程），网络不可达时快速降级，绝不卡死界面。
+    /// 展示文案走 Loc（中英双语，随界面语言切换）。
     /// </summary>
     public static class EnvironmentCheckService
     {
@@ -28,13 +29,13 @@ namespace DshNotifyicon.Services
                 var ct = cts.Token;
 
                 // Node.js
-                log?.Invoke("正在检查 Node.js…");
+                log?.Invoke(Loc.T("ec.checkingNode"));
                 try
                 {
                     var node = await NodeService.DetectAsync(settings.NodePath, envPath);
                     if (node.NodeExe == null)
                     {
-                        items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Missing, Detail = "未检测到 Node.js 运行环境，点击下方按钮一键安装" });
+                        items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Missing, Detail = Loc.T("ec.nodeMissing") });
                     }
                     else
                     {
@@ -48,58 +49,59 @@ namespace DshNotifyicon.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Error, Detail = "检查超时" });
+                    items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Error, Detail = Loc.T("ec.timeout") });
                 }
                 catch (Exception ex)
                 {
-                    items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Error, Detail = "检查失败: " + ex.Message });
+                    items.Add(new EnvItem { Name = "Node.js", Status = EnvStatus.Error, Detail = Loc.T("ec.checkFailed", ex.Message) });
                 }
 
                 // npm 镜像源
-                log?.Invoke("正在读取 npm registry…");
+                log?.Invoke(Loc.T("ec.checkingRegistry"));
                 string reg = "";
+                bool regError = false;
                 try { reg = (await NpmService.GetRegistryAsync(settings.MirrorUrl, envPath, ct)).Trim(); }
-                catch (OperationCanceledException) { reg = "检查超时"; }
-                catch (Exception ex) { reg = "读取失败: " + ex.Message; }
+                catch (OperationCanceledException) { reg = Loc.T("ec.regTimeout"); regError = true; }
+                catch (Exception ex) { reg = Loc.T("ec.regReadFail", ex.Message); regError = true; }
                 items.Add(new EnvItem
                 {
                     Name = "npm 镜像源",
-                    Status = reg.StartsWith("读取失败") || reg.StartsWith("检查超时") ? EnvStatus.Error : EnvStatus.Ok,
-                    Detail = "npm 全局配置: " + reg +
-                             (string.IsNullOrEmpty(settings.MirrorUrl) ? "" : "\n本工具命令将附加 --registry=" + settings.MirrorUrl)
+                    Status = regError ? EnvStatus.Error : EnvStatus.Ok,
+                    Detail = Loc.T("ec.regGlobal", reg) +
+                             (string.IsNullOrEmpty(settings.MirrorUrl) ? "" : "\n" + Loc.T("ec.regToolAppend", settings.MirrorUrl))
                 });
 
                 // dsh 本地版本（无网络）
-                log?.Invoke("正在检查 dsh 安装…");
+                log?.Invoke(Loc.T("ec.checkingDsh"));
                 string local = "";
                 try { local = await NpmService.GetDshLocalVersionAsync(envPath, ct); }
                 catch { }
                 if (string.IsNullOrEmpty(local))
                 {
-                    items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Missing, Detail = "未检测到 @deepseek-ai/dsh，点击下方按钮一键安装" });
+                    items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Missing, Detail = Loc.T("ec.dshMissing") });
                 }
                 else
                 {
                     // dsh 远端版本（网络操作，45s 内必返回）
-                    log?.Invoke("正在查询 dsh 最新版本…");
+                    log?.Invoke(Loc.T("ec.checkingDshLatest"));
                     string latest = null;
                     try { latest = (await NpmService.GetDshLatestVersionAsync(settings.MirrorUrl, envPath, ct)).Trim(); }
                     catch (Exception ex)
                     {
                         latest = null;
-                        log?.Invoke("dsh 远端版本查询失败（网络不可达或镜像异常）: " + ex.Message);
+                        log?.Invoke(Loc.T("ec.dshLatestFail", ex.Message));
                     }
                     if (string.IsNullOrEmpty(latest))
                     {
-                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Ok, Detail = "已安装 " + local + "（远端版本查询失败，可能网络不可达）" });
+                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Ok, Detail = Loc.T("ec.dshOkNoLatest", local) });
                     }
                     else if (Semver.Compare(local, latest) < 0)
                     {
-                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Outdated, Detail = "已安装 " + local + "，远端最新 " + latest + " —— 可更新" });
+                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Outdated, Detail = Loc.T("ec.dshOutdated", local, latest) });
                     }
                     else
                     {
-                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Ok, Detail = "已安装 " + local + "，已是最新版本" });
+                        items.Add(new EnvItem { Name = "dsh", Status = EnvStatus.Ok, Detail = Loc.T("ec.dshUpToDate", local) });
                     }
                 }
             }

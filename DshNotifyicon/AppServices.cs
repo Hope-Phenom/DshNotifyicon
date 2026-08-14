@@ -59,7 +59,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                MessageBox.Show("设置开机自启失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("autostart.fail", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -72,7 +72,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                MessageBox.Show("打开浏览器失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("browser.fail", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -84,7 +84,7 @@ namespace DshNotifyicon
             }
             catch (Exception ex)
             {
-                MessageBox.Show("复制失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("copy.fail", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }
