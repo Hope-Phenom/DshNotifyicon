@@ -28,26 +28,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Pages 未在仓库 Settings 启用前（API 返回 404），跳过部署以免红叉；
-      # 启用后（Settings → Pages → Source: GitHub Actions）下次触发即自动发布。
-      - name: Check Pages enabled
-        id: check
-        run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/${{ github.repository }}/pages")
-          echo "pages-api-http=$code"
-          if [ "$code" = "200" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
-
       - name: Setup Pages
-        if: steps.check.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        if: steps.check.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
       - name: Deploy to GitHub Pages
-        if: steps.check.outputs.enabled == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
