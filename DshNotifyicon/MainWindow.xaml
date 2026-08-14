@@ -132,5 +132,50 @@
                 </StackPanel>
             </ScrollViewer>
         </TabItem>
+
+        <!-- ── 关于 ── -->
+        <TabItem Header="关于">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24" MaxWidth="560">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/Assets/app.ico" Width="48" Height="48" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="DSH 托盘助手" FontSize="20" FontWeight="Bold"/>
+                            <TextBlock x:Name="txtAboutVersion" Foreground="Gray" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock TextWrapping="Wrap" Margin="0,16,0,0"
+                               Text="DeepSeek Harness（dsh）的桌面托盘助手：一键完成环境配置（Node.js / npm 镜像源 / dsh 安装与更新）与 Web UI 启停，自动解析实际地址并打开浏览器——无需手动打开命令行窗口。"/>
+
+                    <GroupBox Header="技术栈" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="· WPF · .NET Framework 4.6.2 · C# 7.3"/>
+                            <TextBlock Text="· Hardcodet.NotifyIcon.Wpf（托盘）· Newtonsoft.Json（设置）" Margin="0,4,0,0"/>
+                            <TextBlock Text="· 服务对象：DeepSeek Harness CLI（dsh）" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="链接" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="DeepSeek Harness: "/>
+                                <Hyperlink NavigateUri="https://github.com/deepseek-ai/deepseek-harness" RequestNavigate="Hyperlink_RequestNavigate">github.com/deepseek-ai/deepseek-harness</Hyperlink>
+                            </TextBlock>
+                            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="Gray"
+                                       Text="本工具仓库地址：配置 GitHub 远端后在此补充"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="版权与致谢" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap" Text="License: MIT（见仓库 LICENSE.txt）"/>
+                            <TextBlock TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Text="图标基于 DeepSeek 官方 favicon 渲染；感谢 DeepSeek Harness 团队以及 Hardcodet.NotifyIcon.Wpf、Newtonsoft.Json 开源项目。"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
     </TabControl>
 </Window>

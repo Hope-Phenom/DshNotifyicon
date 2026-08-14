@@ -108,7 +108,7 @@ DshNotifyicon/
 ├─ DshNotifyicon.slnx        解决方案
 ├─ DshNotifyicon/
 │  ├─ App.xaml(.cs)          单实例、托盘生命周期、--smoke 模式、事件接线
-│  ├─ MainWindow.xaml(.cs)   环境 / 服务 / 设置 三页
+│  ├─ MainWindow.xaml(.cs)   环境 / 服务 / 设置 / 关于 四页
 │  ├─ TrayIcon.cs            托盘图标与菜单（Hardcodet 代码构建）
 │  ├─ AppServices.cs         服务容器：设置 / DSH 进程 / 主窗口 / 托盘
 │  ├─ Services/

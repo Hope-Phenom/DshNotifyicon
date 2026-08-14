@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,12 +7,12 @@ using System.Windows;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("DshNotifyicon")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("DSH 托盘助手")]
+[assembly: AssemblyDescription("DeepSeek Harness 桌面托盘助手：环境配置与 Web UI 启停")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("DshNotifyicon")]
-[assembly: AssemblyCopyright("Copyright ©  2026")]
+[assembly: AssemblyProduct("DSH 托盘助手")]
+[assembly: AssemblyCopyright("Copyright © 2026 Hope.Phenom")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

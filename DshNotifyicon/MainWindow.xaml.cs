@@ -73,7 +73,22 @@ namespace DshNotifyicon
         {
             LoadSettingsIntoUi();
             FillLogFromSnapshot();
+            txtAboutVersion.Text = "版本 " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) +
+                                   " · " + (Environment.Is64BitProcess ? "x64" : "x86") + " · .NET Framework 4.6.2";
             _ = RunEnvCheckAsync();
+        }
+
+        void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(e.Uri.ToString()) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("打开链接失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            e.Handled = true;
         }
 
         // ── 环境页 ──
