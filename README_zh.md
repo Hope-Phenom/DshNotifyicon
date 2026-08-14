@@ -8,6 +8,7 @@
 
 基于 WPF（.NET Framework 4.6.2）的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）桌面助手。托盘常驻，一键解决环境配置与 Web UI 启停的易用性问题——**不再需要手动打开命令行窗口，也不需要自己记 URL**。
 
+> 在线页面：[hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)
 > 项目主页：[github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
 
 ## 特性
@@ -135,6 +136,8 @@ DshNotifyicon/
    ├─ gen-icons.js           图标再生成脚本（node）
    └─ favicon.svg            官方图标源文件
 ```
+
+`site/` 为 GitHub Pages 落地页源码（`index.html` 双语单文件 + 图标素材），由 `.github/workflows/pages.yml` 自动部署到 [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)。
 
 ## 开发备注
 

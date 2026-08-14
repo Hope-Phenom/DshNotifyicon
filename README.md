@@ -8,7 +8,8 @@
 
 A WPF (.NET Framework 4.6.2) desktop tray assistant for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`). It lives in the tray and solves the usability pain of environment setup and Web UI start/stop — **no more manual terminal windows, no more memorizing URLs**.
 
-> Project homepage: [github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
+> Project page: [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)
+> Repository: [github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
 
 ## Features
 
@@ -135,6 +136,8 @@ DshNotifyicon/
    ├─ gen-icons.js           Icon regeneration script (node)
    └─ favicon.svg            Official icon source
 ```
+
+`site/` is the GitHub Pages landing-page source (single-file bilingual `index.html` + icon assets), auto-deployed by `.github/workflows/pages.yml` to [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon).
 
 ## Development notes
 
