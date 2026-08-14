@@ -265,7 +265,11 @@
   };
 
   var lang = "zh";
-  try { lang = localStorage.getItem("dsh-site-lang") || (navigator.language || "zh").toLowerCase().indexOf("zh") === 0 ? "zh" : "en"; } catch (e) {}
+  try {
+    var stored = localStorage.getItem("dsh-site-lang");
+    if (stored) lang = stored;
+    else lang = (navigator.language || "zh").toLowerCase().indexOf("zh") === 0 ? "zh" : "en";
+  } catch (e) {}
 
   function applyLang(l) {
     lang = l;
