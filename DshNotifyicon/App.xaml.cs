@@ -170,7 +170,7 @@ namespace DshNotifyicon
                         var settings = new Settings();
                         var envPath = NodeService.RefreshPath();
                         b.AppendLine("== env check ==");
-                        var node = NodeService.DetectAsync(settings.NodePath).GetAwaiter().GetResult();
+                        var node = NodeService.DetectAsync(settings.NodePath, envPath).GetAwaiter().GetResult();
                         b.AppendLine("nodeExe: " + (node.NodeExe ?? "MISSING"));
                         b.AppendLine("node: " + (node.NodeVersion ?? "?") + " npm: " + (node.NpmVersion ?? "?"));
                         var reg = NpmService.GetRegistryAsync("", envPath).GetAwaiter().GetResult();

@@ -20,6 +20,7 @@
                         <Button x:Name="btnCheck" Content="一键体检" Width="110" Height="30" Click="BtnCheck_Click"/>
                         <TextBlock x:Name="txtCheckStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="Gray" TextWrapping="Wrap"/>
                     </StackPanel>
+                    <ProgressBar x:Name="prgOp" Height="6" Margin="0,10,0,0" IsIndeterminate="True" Visibility="Collapsed"/>
 
                     <GroupBox Header="Node.js 运行环境" Margin="0,12,0,0">
                         <StackPanel>
@@ -113,6 +114,14 @@
                             <TextBox x:Name="txtTrustedHosts" Margin="0,4,0,0"/>
                             <TextBlock Text="Node.js 可执行文件路径（留空自动检测）:" Margin="0,10,0,0"/>
                             <TextBox x:Name="txtNodePath" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="清理" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="Gray"
+                                       Text="移除 dsh 相关环境：停止 dsh 服务 → 卸载全局 npm 包 @deepseek-ai/dsh → 将数据目录（含 API 凭据与会话）重命名备份为 .dsh.bak-日期（不直接删除）。不会卸载 Node.js；如确需卸载 Node.js，请到系统 设置→应用 或执行 winget uninstall OpenJS.NodeJS.LTS。"/>
+                            <Button x:Name="btnCleanup" Content="清理 dsh 环境…" Width="140" HorizontalAlignment="Left" Margin="0,8,0,0" Click="BtnCleanup_Click"/>
                         </StackPanel>
                     </GroupBox>
 

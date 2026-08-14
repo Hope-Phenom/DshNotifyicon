@@ -77,10 +77,11 @@ namespace DshNotifyicon.Services
             return string.IsNullOrEmpty(mirrorUrl) ? "" : " --registry=" + mirrorUrl;
         }
 
-        /// <summary>执行 npm 命令（node + npm-cli.js），非零退出码抛异常。</summary>
-        static async Task<string> ExecNpmAsync(string args, string envPath, Action<string> log, CancellationToken ct)
+        /// <summary>执行 npm 命令（node + npm-cli.js），非零退出码抛异常。timeoutMs 默认 20 分钟（安装用），查询类命令应传短超时。</summary>
+        static async Task<string> ExecNpmAsync(string args, string envPath, Action<string> log, CancellationToken ct, int timeoutMs = 20 * 60 * 1000)
         {
-            var node = await NodeService.DetectAsync();
+            // 用刷新后的 PATH 检测 node（Node 刚安装后立即可用）
+            var node = await NodeService.DetectAsync(null, envPath);
             if (node.NodeExe == null) throw new InvalidOperationException("未检测到 Node.js，请先在环境页安装");
             if (node.NpmCliJs == null) throw new InvalidOperationException("未找到 npm-cli.js（Node.js 安装可能不完整）");
             var spec = new ProcessSpec
@@ -88,7 +89,7 @@ namespace DshNotifyicon.Services
                 FileName = node.NodeExe,
                 Arguments = ProcessRunner.Quote(node.NpmCliJs) + " " + args,
                 WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                TimeoutMs = 20 * 60 * 1000,
+                TimeoutMs = timeoutMs,
                 Environment = new Dictionary<string, string> { { "Path", envPath } }
             };
             var r = await ProcessRunner.RunAsync(spec, ct, log);
@@ -113,30 +114,30 @@ namespace DshNotifyicon.Services
             finally { _gate.Release(); }
         }
 
-        /// <summary>当前 registry（含 mirrorUrl 时反映该源的取值）。</summary>
-        public static Task<string> GetRegistryAsync(string mirrorUrl, string envPath)
+        /// <summary>当前 registry（含 mirrorUrl 时反映该源的取值）。本地操作，20s 上限。</summary>
+        public static Task<string> GetRegistryAsync(string mirrorUrl, string envPath, CancellationToken ct = default(CancellationToken))
         {
-            return WithGateAsync(() => ExecNpmAsync("config get registry" + RegistryArg(mirrorUrl), envPath, null, CancellationToken.None));
+            return WithGateAsync(() => ExecNpmAsync("config get registry" + RegistryArg(mirrorUrl), envPath, null, ct, 20000));
         }
 
         /// <summary>写入全局 npmrc（用户级，影响所有 npm 命令）。显式操作，需 UI 确认。</summary>
         public static Task SetGlobalRegistryAsync(string url, string envPath, Action<string> log)
         {
-            return WithGateAsync(() => ExecNpmAsync("config set registry " + url, envPath, log, CancellationToken.None));
+            return WithGateAsync(() => ExecNpmAsync("config set registry " + url, envPath, log, CancellationToken.None, 60000));
         }
 
-        /// <summary>npm 全局前缀（%APPDATA%\npm 等）。</summary>
-        public static Task<string> GetGlobalPrefixAsync(string envPath)
+        /// <summary>npm 全局前缀（%APPDATA%\npm 等）。本地操作，20s 上限。</summary>
+        public static Task<string> GetGlobalPrefixAsync(string envPath, CancellationToken ct = default(CancellationToken))
         {
-            return WithGateAsync(() => ExecNpmAsync("prefix -g", envPath, null, CancellationToken.None));
+            return WithGateAsync(() => ExecNpmAsync("prefix -g", envPath, null, ct, 20000));
         }
 
         /// <summary>本地已安装的 dsh 版本；未安装返回空串。直接读 package.json，无网络。</summary>
-        public static async Task<string> GetDshLocalVersionAsync(string envPath)
+        public static async Task<string> GetDshLocalVersionAsync(string envPath, CancellationToken ct = default(CancellationToken))
         {
             try
             {
-                var prefix = (await GetGlobalPrefixAsync(envPath)).Trim();
+                var prefix = (await GetGlobalPrefixAsync(envPath, ct)).Trim();
                 var pkg = Path.Combine(prefix, "node_modules", "@deepseek-ai", "dsh", "package.json");
                 if (File.Exists(pkg))
                 {
@@ -149,10 +150,10 @@ namespace DshNotifyicon.Services
             return "";
         }
 
-        /// <summary>远端最新版本（显式 @latest，规避自定义 tag 陷阱）。</summary>
-        public static Task<string> GetDshLatestVersionAsync(string mirrorUrl, string envPath)
+        /// <summary>远端最新版本（显式 @latest，规避自定义 tag 陷阱）。网络操作，45s 上限，超时视为查询失败。</summary>
+        public static Task<string> GetDshLatestVersionAsync(string mirrorUrl, string envPath, CancellationToken ct = default(CancellationToken))
         {
-            return WithGateAsync(() => ExecNpmAsync("view @deepseek-ai/dsh@latest version" + RegistryArg(mirrorUrl), envPath, null, CancellationToken.None));
+            return WithGateAsync(() => ExecNpmAsync("view @deepseek-ai/dsh@latest version" + RegistryArg(mirrorUrl), envPath, null, ct, 45000));
         }
 
         /// <summary>安装/更新 dsh 到最新版。npm ≥ 11 时追加 --allow-scripts 以执行原生依赖安装脚本。</summary>
@@ -173,6 +174,12 @@ namespace DshNotifyicon.Services
             }
             catch { }
             await WithGateAsync(() => ExecNpmAsync(args, envPath, log, ct));
+        }
+
+        /// <summary>卸载全局 dsh 包（幂等；本地操作，无需网络/镜像，5 分钟上限）。</summary>
+        public static Task UninstallDshAsync(string envPath, Action<string> log, CancellationToken ct)
+        {
+            return WithGateAsync(() => ExecNpmAsync("uninstall -g @deepseek-ai/dsh", envPath, log, ct, 300000));
         }
 
         /// <summary>解析 dsh bin.js 路径（%prefix%\node_modules\@deepseek-ai\dsh\lib\bin.js）；未安装返回 null。</summary>

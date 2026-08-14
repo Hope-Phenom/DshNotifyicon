@@ -17,6 +17,10 @@ namespace DshNotifyicon
         bool _allowClose;
         const int MaxLogLines = 2000;
 
+        // 长操作（安装/更新）状态
+        CancellationTokenSource _opCts;
+        bool _opActive;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -133,26 +137,29 @@ namespace DshNotifyicon
 
         async void BtnInstallNode_Click(object sender, RoutedEventArgs e)
         {
-            btnInstallNode.IsEnabled = false;
-            try
-            {
-                txtCheckStatus.Text = "正在安装 Node.js…";
-                var ok = await NodeService.InstallNodeAsync(line => SetCheckStatus(line), CancellationToken.None);
-                if (ok)
+            if (_opActive) { CancelOp(); return; }
+            await RunLongOpAsync(
+                "安装 Node.js",
+                btnInstallNode, null,
+                async (log, ct) =>
                 {
+                    var ok = await NodeService.InstallNodeAsync(log, ct);
+                    if (!ok) throw new Exception("安装未成功，详见日志（可手动从 nodejs.org 下载安装）");
                     App.Services.RefreshEnvPath();
-                    txtCheckStatus.Text = "Node.js 安装完成";
-                }
-            }
-            catch (Exception ex)
-            {
-                txtCheckStatus.Text = "安装失败: " + ex.Message;
-            }
-            finally
-            {
-                btnInstallNode.IsEnabled = true;
-            }
-            await RunEnvCheckAsync();
+                    log("安装完成，正在验证…");
+                    // 轮询检测（最多 ~15s），确保新安装的 node 立即可见（走刷新后的 PATH）
+                    var s = App.Services.Settings;
+                    var node = await NodeService.DetectAsync(s.NodePath, App.Services.EnvPath);
+                    for (int i = 0; i < 10 && node.NodeExe == null; i++)
+                    {
+                        await Task.Delay(1500);
+                        node = await NodeService.DetectAsync(s.NodePath, App.Services.EnvPath);
+                    }
+                    log(node.NodeExe != null
+                        ? "检测到 Node.js: " + node.NodeVersion
+                        : "未检测到可执行文件（可尝试重新体检或检查安装路径）");
+                },
+                RunEnvCheckAsync);
         }
 
         void CmbMirror_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -210,27 +217,83 @@ namespace DshNotifyicon
 
         async void BtnInstallDsh_Click(object sender, RoutedEventArgs e)
         {
-            btnInstallDsh.IsEnabled = false;
-            btnCheckUpdate.IsEnabled = false;
+            if (_opActive) { CancelOp(); return; }
+            await RunLongOpAsync(
+                "安装 / 更新 dsh",
+                btnInstallDsh, btnCheckUpdate,
+                async (log, ct) =>
+                {
+                    await NpmService.InstallOrUpdateDshAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, log, ct);
+                    var v = await NpmService.GetDshLocalVersionAsync(App.Services.EnvPath);
+                    log("已安装版本: " + v);
+                },
+                RunEnvCheckAsync);
+        }
+
+        // ── 长操作统一交互（安装/更新）──
+
+        void CancelOp()
+        {
+            try { if (_opCts != null) _opCts.Cancel(); } catch { }
+        }
+
+        /// <summary>
+        /// 长操作统一交互：自动切到日志面板（logTab，默认服务页）透传原始输出（滚动+限行）、
+        /// 环境页显示不确定进度条与截断状态行、操作按钮变为"取消"（点击即杀进程树）、
+        /// 完成后若用户未手动切走标签页则回到 returnTab（默认环境页），再执行 after（通常为重新体检）。
+        /// </summary>
+        async Task RunLongOpAsync(string title, Button busyButton, Button disableButton,
+            Func<Action<string>, CancellationToken, Task> op, Func<Task> after = null,
+            int logTab = 1, int returnTab = 0)
+        {
+            if (_opActive) return;
+            _opActive = true;
+            _opCts = new CancellationTokenSource();
+            var ct = _opCts.Token;
+            var origContent = busyButton != null ? busyButton.Content : null;
+
+            Action<string> progressSink = line =>
+            {
+                TraceLog(line);
+                var s = line.Length > 80 ? line.Substring(0, 80) + "…" : line;
+                if (txtCheckStatus.Text != s) txtCheckStatus.Text = s;
+            };
+
+            txtCheckStatus.Text = title + "…";
+            if (busyButton != null) busyButton.Content = "取消";
+            if (disableButton != null) disableButton.IsEnabled = false;
+            prgOp.Visibility = Visibility.Visible;
+            TraceLog("════ " + title + " ════");
+            tabMain.SelectedIndex = logTab; // 日志面板透传进度
+
+            bool succeeded = false;
             try
             {
-                txtCheckStatus.Text = "正在安装/更新 dsh（可能需要几分钟）…";
-                await NpmService.InstallOrUpdateDshAsync(
-                    App.Services.Settings.MirrorUrl, App.Services.EnvPath,
-                    line => SetCheckStatus(line), CancellationToken.None);
-                var v = await NpmService.GetDshLocalVersionAsync(App.Services.EnvPath);
-                txtCheckStatus.Text = "dsh 安装完成: " + v;
+                await op(progressSink, ct);
+                succeeded = true;
+                TraceLog("✔ " + title + "完成");
+                txtCheckStatus.Text = title + "完成";
+                if (tabMain.SelectedIndex == logTab) tabMain.SelectedIndex = returnTab; // 用户未手动切走则回目标页
+            }
+            catch (OperationCanceledException)
+            {
+                TraceLog("✖ " + title + "已取消");
+                txtCheckStatus.Text = title + "已取消";
             }
             catch (Exception ex)
             {
-                txtCheckStatus.Text = "dsh 安装失败: " + ex.Message;
+                TraceLog("✖ " + title + "失败: " + ex.Message);
+                txtCheckStatus.Text = title + "失败";
             }
             finally
             {
-                btnInstallDsh.IsEnabled = true;
-                btnCheckUpdate.IsEnabled = true;
+                _opActive = false;
+                _opCts = null;
+                if (busyButton != null) busyButton.Content = origContent;
+                if (disableButton != null) disableButton.IsEnabled = true;
+                prgOp.Visibility = Visibility.Collapsed;
             }
-            await RunEnvCheckAsync();
+            if (succeeded && after != null) await after();
         }
 
         async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
@@ -536,6 +599,62 @@ namespace DshNotifyicon
             {
                 MessageBox.Show("打开失败: " + ex.Message, "DSH 托盘助手", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        /// <summary>
+        /// 清理 dsh 环境：停止 dsh → npm 卸载全局包 → 数据目录改名备份（含凭据）→ 移除开机自启。
+        /// 全程确认 + 日志透传；不卸载 Node.js。
+        /// </summary>
+        async void BtnCleanup_Click(object sender, RoutedEventArgs e)
+        {
+            if (_opActive) { CancelOp(); return; }
+            var r = Ask(
+                "将执行以下清理：\n\n" +
+                "1. 停止正在运行的 dsh 服务\n" +
+                "2. 卸载全局 npm 包 @deepseek-ai/dsh\n" +
+                "3. 将数据目录（含 API 凭据与会话记录）重命名备份为 .dsh.bak-日期（不直接删除，可恢复）\n" +
+                "4. 移除本工具的开机自启项\n\n" +
+                "不会卸载 Node.js。确定继续？",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, "清理 dsh 环境");
+            if (r != MessageBoxResult.Yes) return;
+
+            await RunLongOpAsync("清理 dsh 环境", btnCleanup, null, async (log, ct) =>
+            {
+                // 1. 停止 dsh
+                if (App.Services.Dsh.State != DshState.Idle)
+                {
+                    log("停止 dsh 服务…");
+                    await App.Services.Dsh.StopAsync();
+                }
+                else
+                {
+                    log("dsh 未在运行，跳过停止");
+                }
+
+                // 2. 卸载全局 npm 包
+                log("卸载全局包 @deepseek-ai/dsh…");
+                await NpmService.UninstallDshAsync(App.Services.EnvPath, log, ct);
+                log("npm 全局包已卸载");
+
+                // 3. 数据目录改名备份（尊重 DSH_HOME 覆盖）
+                var home = Environment.GetEnvironmentVariable("DSH_HOME");
+                if (string.IsNullOrEmpty(home))
+                    home = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh");
+                if (System.IO.Directory.Exists(home))
+                {
+                    var bak = home + ".bak-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    log("数据目录备份为: " + bak + "（含凭据，确认不再需要后可手动删除）");
+                    System.IO.Directory.Move(home, bak);
+                }
+                else
+                {
+                    log("未发现数据目录 " + home + "，跳过备份");
+                }
+
+                // 4. 移除开机自启
+                if (App.Services.Settings.AutoStartOnLogin) App.Services.ToggleAutoStart(false);
+                log("清理完成。本工具删除自身文件夹即卸载；设置目录可一并删除: " + SettingsService.SettingsDir);
+            }, RunEnvCheckAsync, logTab: 1, returnTab: 2);
         }
     }
 }

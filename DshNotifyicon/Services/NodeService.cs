@@ -63,23 +63,22 @@ namespace DshNotifyicon.Services
             return string.Join(";", merged);
         }
 
-        /// <summary>检测 node/npm：PATH 扫描 + 常见安装路径兜底；读取版本。</summary>
-        public static async Task<NodeInfo> DetectAsync(string nodeExeOverride = null)
+        /// <summary>
+        /// 检测 node/npm：优先扫描刷新后的 PATH（envPath，Node 安装后立即生效），
+        /// 再扫当前进程 PATH 与常见安装路径；读取版本。
+        /// </summary>
+        public static async Task<NodeInfo> DetectAsync(string nodeExeOverride = null, string envPath = null)
         {
             var info = new NodeInfo();
             var candidates = new List<string>();
-            if (!string.IsNullOrEmpty(nodeExeOverride)) candidates.Add(nodeExeOverride);
-            var pathEnv = Environment.GetEnvironmentVariable("Path") ?? "";
-            foreach (var seg in pathEnv.Split(';'))
-            {
-                var dir = seg.Trim();
-                if (dir.Length == 0) continue;
-                var p = Path.Combine(dir, "node.exe");
-                if (File.Exists(p)) candidates.Add(p);
-            }
-            candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe"));
-            candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "nodejs", "node.exe"));
-            candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "nvm", "node.exe"));
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Action<string> addCand = (p) => { if (!string.IsNullOrEmpty(p) && seen.Add(p)) candidates.Add(p); };
+            if (!string.IsNullOrEmpty(nodeExeOverride)) addCand(nodeExeOverride);
+            AddFromPath(envPath, addCand);
+            AddFromPath(Environment.GetEnvironmentVariable("Path"), addCand);
+            addCand(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe"));
+            addCand(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "nodejs", "node.exe"));
+            addCand(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "nvm", "node.exe"));
 
             string nodeExe = null;
             foreach (var c in candidates)
@@ -115,6 +114,17 @@ namespace DshNotifyicon.Services
                 catch { }
             }
             return info;
+        }
+
+        static void AddFromPath(string pathEnv, Action<string> addCand)
+        {
+            if (string.IsNullOrEmpty(pathEnv)) return;
+            foreach (var seg in pathEnv.Split(';'))
+            {
+                var dir = seg.Trim();
+                if (dir.Length == 0) continue;
+                addCand(Path.Combine(dir, "node.exe"));
+            }
         }
 
         /// <summary>
