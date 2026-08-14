@@ -97,6 +97,7 @@ namespace DshNotifyicon
             gbLinks.Header = Loc.T("about.linksGroup");
             runLinkDh.Text = Loc.T("about.linkDh");
             runLinkRepo.Text = Loc.T("about.linkRepo");
+            runLinkSite.Text = Loc.T("about.linkSite");
             gbLicense.Header = Loc.T("about.licenseGroup");
             txtLicense.Text = Loc.T("about.license");
             txtCredits.Text = Loc.T("about.credits");

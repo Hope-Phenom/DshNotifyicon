@@ -116,6 +116,7 @@ namespace DshNotifyicon.Services
             { "about.linksGroup", new[] { "链接", "Links" } },
             { "about.linkDh", new[] { "DeepSeek Harness: ", "DeepSeek Harness: " } },
             { "about.linkRepo", new[] { "本工具仓库: ", "Repository: " } },
+            { "about.linkSite", new[] { "在线页面: ", "Project page: " } },
             { "about.licenseGroup", new[] { "版权与致谢", "License & Credits" } },
             { "about.license", new[] { "License: MIT（见仓库 LICENSE.txt）", "License: MIT (see LICENSE.txt in the repo)" } },
             { "about.credits", new[] { "图标基于 DeepSeek 官方 favicon 渲染；感谢 DeepSeek Harness 团队以及 Hardcodet.NotifyIcon.Wpf、Newtonsoft.Json 开源项目。", "Icon rendered from DeepSeek's official favicon; thanks to the DeepSeek Harness team and the Hardcodet.NotifyIcon.Wpf & Newtonsoft.Json open-source projects." } },

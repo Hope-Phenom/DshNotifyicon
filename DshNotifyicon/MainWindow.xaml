@@ -177,6 +177,10 @@
                                 <Run x:Name="runLinkRepo" Text="本工具仓库: "/>
                                 <Hyperlink NavigateUri="https://github.com/Hope-Phenom/DshNotifyicon" RequestNavigate="Hyperlink_RequestNavigate">github.com/Hope-Phenom/DshNotifyicon</Hyperlink>
                             </TextBlock>
+                            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                                <Run x:Name="runLinkSite" Text="在线页面: "/>
+                                <Hyperlink NavigateUri="https://hope-phenom.github.io/DshNotifyicon" RequestNavigate="Hyperlink_RequestNavigate">hope-phenom.github.io/DshNotifyicon</Hyperlink>
+                            </TextBlock>
                         </StackPanel>
                     </GroupBox>
 
