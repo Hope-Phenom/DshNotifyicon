@@ -73,8 +73,9 @@ namespace DshNotifyicon.Services
             p.EnableRaisingEvents = true;
             if (spec.RedirectOutput)
             {
-                p.OutputDataReceived += (s, e) => { if (e.Data != null) onOutput?.Invoke(e.Data); };
-                p.ErrorDataReceived += (s, e) => { if (e.Data != null) onError?.Invoke(e.Data); };
+                // 事件回调运行在线程池线程：.NET Framework 下回调抛异常会直接终止进程，必须兜底
+                p.OutputDataReceived += (s, e) => { try { if (e.Data != null) onOutput?.Invoke(e.Data); } catch { } };
+                p.ErrorDataReceived += (s, e) => { try { if (e.Data != null) onError?.Invoke(e.Data); } catch { } };
             }
             p.Start();
             if (spec.RedirectOutput)

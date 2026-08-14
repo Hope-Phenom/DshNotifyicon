@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,12 @@ namespace DshNotifyicon
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // 全局兜底：任何线程的未处理异常都落盘（配合 legacyUnhandledExceptionPolicy，
+            // 线程池异常不再直接杀死进程），便于后续诊断迭代
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+                WriteCrashLog(args.ExceptionObject as Exception, "AppDomain");
+
             _smoke = e.Args != null && Array.IndexOf(e.Args, "--smoke") >= 0;
 
             if (_smoke)
@@ -80,12 +87,58 @@ namespace DshNotifyicon
 
             DispatcherUnhandledException += (s, args) =>
             {
+                WriteCrashLog(args.Exception, "Dispatcher");
                 try { Services.Tray.ShowBalloon("DSH 托盘助手", "发生错误: " + args.Exception.Message); } catch { }
                 args.Handled = true;
             };
 
+            // 上次崩溃（24h 内）留下日志时，启动后提示一次，便于配合排查
+            try
+            {
+                var dir = SettingsService.SettingsDir;
+                if (Directory.Exists(dir))
+                {
+                    var recent = Directory.GetFiles(dir, "crash-*.log")
+                        .Where(f => File.GetLastWriteTime(f) > DateTime.Now.AddHours(-24)).ToArray();
+                    if (recent.Length > 0)
+                        Dispatcher.BeginInvoke(new Action(() =>
+                            Services.Tray.ShowBalloon("DSH 托盘助手",
+                                "检测到最近一次运行发生异常，详情已记录: " + string.Join("; ", recent.Select(f => System.IO.Path.GetFileName(f))))));
+                }
+            }
+            catch { }
+
             if (firstRun || settings.ShowMainWindowOnStartup)
                 Services.Main.ShowOrActivate();
+        }
+
+        /// <summary>崩溃/异常落盘：异常详情 + 最近日志快照 → %APPDATA%\DshNotifyicon\crash-*.log，并托盘提示路径。</summary>
+        void WriteCrashLog(Exception ex, string source)
+        {
+            try
+            {
+                var dir = SettingsService.SettingsDir;
+                Directory.CreateDirectory(dir);
+                var path = Path.Combine(dir, "crash-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".log");
+                var sb = new StringBuilder();
+                sb.AppendLine("[source] " + source);
+                sb.AppendLine("[time] " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                sb.AppendLine("[exception] " + (ex != null ? ex.ToString() : "null"));
+                sb.AppendLine("[version] " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+                if (Services != null)
+                {
+                    sb.AppendLine("[recent-log]");
+                    try { foreach (var l in Services.Dsh.SnapshotLog()) sb.AppendLine(l); } catch { }
+                }
+                File.WriteAllText(path, sb.ToString());
+                try
+                {
+                    if (Services != null && Services.Tray != null)
+                        Services.Tray.ShowBalloon("DSH 托盘助手", "发生内部错误，详情已记录: " + path);
+                }
+                catch { }
+            }
+            catch { }
         }
 
         void WireDshEvents()

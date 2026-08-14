@@ -63,7 +63,7 @@ namespace DshNotifyicon.Services
         void SetState(DshState s)
         {
             _state = s;
-            StateChanged?.Invoke(s);
+            try { StateChanged?.Invoke(s); } catch { } // 订阅者异常隔离，不影响进程
         }
 
         void Log(string line)
@@ -73,7 +73,7 @@ namespace DshNotifyicon.Services
                 RecentLog.Add(line);
                 if (RecentLog.Count > 1000) RecentLog.RemoveRange(0, RecentLog.Count - 1000);
             }
-            LogLine?.Invoke(line);
+            try { LogLine?.Invoke(line); } catch { } // 订阅者异常隔离
         }
 
         /// <summary>线程安全地取日志快照（主窗口打开时回填）。</summary>
@@ -208,7 +208,7 @@ namespace DshNotifyicon.Services
                         ProcessId = null;
                         SetState(DshState.Idle);
                         Log("dsh 进程意外退出（exit " + code + "）");
-                        Exited?.Invoke("dsh 进程意外退出（exit " + code + "）。会话已持久化，重新启动即可继续。");
+                        try { Exited?.Invoke("dsh 进程意外退出（exit " + code + "）。会话已持久化，重新启动即可继续。"); } catch { }
                     }
                 };
                 ProcessId = proc.Id;
@@ -258,7 +258,7 @@ namespace DshNotifyicon.Services
                 Url = url ?? ("http://127.0.0.1:" + probePort);
                 SetState(DshState.Running);
                 Log("dsh 已就绪: " + Url);
-                Ready?.Invoke(Url);
+                try { Ready?.Invoke(Url); } catch { } // 订阅者异常隔离
                 return true;
             }
             finally

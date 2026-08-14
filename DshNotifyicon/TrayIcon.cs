@@ -84,20 +84,24 @@ namespace DshNotifyicon
             var dispatcher = Application.Current != null ? Application.Current.Dispatcher : null;
             if (dispatcher != null && !dispatcher.CheckAccess())
             {
-                dispatcher.BeginInvoke(new Action(() => SetState(state, url)));
+                try { dispatcher.BeginInvoke(new Action(() => SetState(state, url))); } catch { return; }
                 return;
             }
-            bool running = state == DshState.Running;
-            bool busy = state == DshState.Starting || state == DshState.Stopping;
-            _startItem.IsEnabled = !running && !busy;
-            _stopItem.IsEnabled = running || state == DshState.Starting;
-            _restartItem.IsEnabled = running || state == DshState.Starting;
-            _openItem.IsEnabled = running || url != null;
-            _copyItem.IsEnabled = running || url != null;
-            _tray.IconSource = running ? LoadIcon("app-running.ico") : LoadIcon("app.ico");
-            _tray.ToolTipText = running
-                ? "DSH 运行中: " + url
-                : "DSH 托盘助手 — " + StateText(state);
+            try
+            {
+                bool running = state == DshState.Running;
+                bool busy = state == DshState.Starting || state == DshState.Stopping;
+                _startItem.IsEnabled = !running && !busy;
+                _stopItem.IsEnabled = running || state == DshState.Starting;
+                _restartItem.IsEnabled = running || state == DshState.Starting;
+                _openItem.IsEnabled = running || url != null;
+                _copyItem.IsEnabled = running || url != null;
+                _tray.IconSource = running ? LoadIcon("app-running.ico") : LoadIcon("app.ico");
+                _tray.ToolTipText = running
+                    ? "DSH 运行中: " + url
+                    : "DSH 托盘助手 — " + StateText(state);
+            }
+            catch { }
         }
 
         public void ShowBalloon(string title, string text)
@@ -105,10 +109,10 @@ namespace DshNotifyicon
             var dispatcher = Application.Current != null ? Application.Current.Dispatcher : null;
             if (dispatcher != null && !dispatcher.CheckAccess())
             {
-                dispatcher.BeginInvoke(new Action(() => ShowBalloon(title, text)));
+                try { dispatcher.BeginInvoke(new Action(() => ShowBalloon(title, text))); } catch { return; }
                 return;
             }
-            _tray.ShowBalloonTip(title, text, BalloonIcon.Info);
+            try { _tray.ShowBalloonTip(title, text, BalloonIcon.Info); } catch { }
         }
 
         static string StateText(DshState s)

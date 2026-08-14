@@ -30,12 +30,20 @@ namespace DshNotifyicon
 
         public void ShowOrActivate()
         {
-            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(ShowOrActivate)); return; }
-            Show();
-            if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
-            Activate();
-            Topmost = true;
-            Topmost = false;
+            if (!Dispatcher.CheckAccess())
+            {
+                try { Dispatcher.BeginInvoke(new Action(ShowOrActivate)); } catch { return; }
+                return;
+            }
+            try
+            {
+                Show();
+                if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+                Activate();
+                Topmost = true;
+                Topmost = false;
+            }
+            catch { }
         }
 
         public void ShowEnvTab()
@@ -98,8 +106,12 @@ namespace DshNotifyicon
 
         void SetCheckStatus(string line)
         {
-            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(() => SetCheckStatus(line))); return; }
-            txtCheckStatus.Text = line;
+            if (!Dispatcher.CheckAccess())
+            {
+                try { Dispatcher.BeginInvoke(new Action(() => SetCheckStatus(line))); } catch { return; }
+                return;
+            }
+            try { txtCheckStatus.Text = line; } catch { }
         }
 
         void ApplyEnvItems(System.Collections.Generic.List<EnvItem> items)
@@ -439,44 +451,69 @@ namespace DshNotifyicon
         /// <summary>服务状态刷新（任意线程可调）。</summary>
         public void UpdateServiceState(DshState state)
         {
-            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(() => UpdateServiceState(state))); return; }
-            bool running = state == DshState.Running;
-            bool busy = state == DshState.Starting || state == DshState.Stopping;
-            btnStart.IsEnabled = !running && !busy;
-            btnStop.IsEnabled = running || state == DshState.Starting;
-            btnRestart.IsEnabled = running;
-            btnOpenUi.IsEnabled = running || App.Services.Dsh.Url != null;
-
-            switch (state)
+            if (!Dispatcher.CheckAccess())
             {
-                case DshState.Running:
-                    txtServiceStatus.Text = "● 运行中: " + App.Services.Dsh.Url;
-                    break;
-                case DshState.Starting:
-                    txtServiceStatus.Text = "… 正在启动（首次启动需初始化 profile，可能较慢，请观察日志）";
-                    break;
-                case DshState.Stopping:
-                    txtServiceStatus.Text = "… 正在停止";
-                    break;
-                case DshState.Error:
-                    txtServiceStatus.Text = "✗ 启动失败（查看下方日志定位原因）";
-                    App.Services.Tray.ShowBalloon("DSH 启动失败", "请查看主窗口日志面板");
-                    break;
-                default:
-                    txtServiceStatus.Text = "○ 未运行";
-                    break;
+                try { Dispatcher.BeginInvoke(new Action(() => UpdateServiceState(state))); } catch { return; }
+                return;
             }
+            try
+            {
+                bool running = state == DshState.Running;
+                bool busy = state == DshState.Starting || state == DshState.Stopping;
+                btnStart.IsEnabled = !running && !busy;
+                btnStop.IsEnabled = running || state == DshState.Starting;
+                btnRestart.IsEnabled = running;
+                btnOpenUi.IsEnabled = running || App.Services.Dsh.Url != null;
+
+                switch (state)
+                {
+                    case DshState.Running:
+                        txtServiceStatus.Text = "● 运行中: " + App.Services.Dsh.Url;
+                        break;
+                    case DshState.Starting:
+                        txtServiceStatus.Text = "… 正在启动（首次启动需初始化 profile，可能较慢，请观察日志）";
+                        break;
+                    case DshState.Stopping:
+                        txtServiceStatus.Text = "… 正在停止";
+                        break;
+                    case DshState.Error:
+                        txtServiceStatus.Text = "✗ 启动失败（查看下方日志定位原因）";
+                        App.Services.Tray.ShowBalloon("DSH 启动失败", "请查看主窗口日志面板");
+                        break;
+                    default:
+                        txtServiceStatus.Text = "○ 未运行";
+                        break;
+                }
+            }
+            catch { }
         }
 
         // ── 日志 ──
 
+        volatile bool _logQueued;
+
+        /// <summary>
+        /// 日志追加（任意线程可调）。突发输出合并去重：跨线程时若已有待处理的追加则丢弃本次，
+        /// 防止安装/下载输出洪峰把 Dispatcher 队列塞爆导致界面卡死。
+        /// </summary>
         public void TraceLog(string line)
         {
-            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(() => TraceLog(line))); return; }
+            if (!Dispatcher.CheckAccess())
+            {
+                if (_logQueued) return;
+                _logQueued = true;
+                try { Dispatcher.BeginInvoke(new Action(() => { _logQueued = false; TraceLog(line); })); }
+                catch { _logQueued = false; }
+                return;
+            }
             if (!IsLoaded) return;
-            txtLog.AppendText(line + Environment.NewLine);
-            TrimLog();
-            txtLog.ScrollToEnd();
+            try
+            {
+                txtLog.AppendText(line + Environment.NewLine);
+                TrimLog();
+                txtLog.ScrollToEnd();
+            }
+            catch { }
         }
 
         void FillLogFromSnapshot()
