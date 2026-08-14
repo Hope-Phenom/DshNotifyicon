@@ -57,10 +57,14 @@ jobs:
           name: DshNotifyicon-build
           path: dist
 
-      - name: Package ZIP
+      - name: Package ZIP (flatten)
         run: |
           cd dist
-          zip -r DshNotifyicon.zip .
+          mkdir pkg
+          cp DshNotifyicon/bin/Release/* pkg/
+          cp README.md pkg/
+          cd pkg
+          zip -r ../DshNotifyicon.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
