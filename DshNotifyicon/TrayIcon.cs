@@ -75,6 +75,16 @@ namespace DshNotifyicon
             menu.Items.Add(_exitItem);
             _tray.ContextMenu = menu;
 
+            _tray.TrayMouseDoubleClick += (s, e) =>
+            {
+                try
+                {
+                    if (settings.TrayDoubleClickAction == "web") a.OpenUi();
+                    else a.ShowWindow();
+                }
+                catch { }
+            };
+
             Loc.Changed += OnLangChanged;
             ApplyLanguage();
             SetState(DshState.Idle, null);

@@ -106,6 +106,7 @@
                     <CheckBox x:Name="chkAutoOpen" Content="启动 DSH 成功后自动打开浏览器" Margin="0,4,0,0"/>
                     <CheckBox x:Name="chkAutoStart" Content="开机自动启动本工具" Margin="0,10,0,0"/>
                     <CheckBox x:Name="chkShowMain" Content="启动时显示主窗口（默认隐藏到托盘）" Margin="0,10,0,0"/>
+                    <CheckBox x:Name="chkAutoStartDsh" Content="托盘启动后自动启动 DSH" Margin="0,10,0,0"/>
                     <TextBlock x:Name="lblExitNote" Text="退出本工具时会自动停止 DSH 服务" Foreground="Gray" Margin="0,10,0,0"/>
 
                     <GroupBox x:Name="gbLang" Header="界面语言" Margin="0,16,0,0">
@@ -116,6 +117,17 @@
                                 <ComboBoxItem/>
                             </ComboBox>
                             <TextBlock x:Name="lblLangHint" Foreground="Gray" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox x:Name="gbTray" Header="托盘" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="lblDoubleClick" Text="双击托盘图标:"/>
+                            <ComboBox x:Name="cmbTrayDoubleClick" Width="220" HorizontalAlignment="Left" SelectionChanged="CmbTrayDoubleClick_Changed">
+                                <ComboBoxItem/>
+                                <ComboBoxItem/>
+                            </ComboBox>
+                            <TextBlock x:Name="lblDoubleClickHint" Foreground="Gray" Margin="0,6,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -139,6 +151,36 @@
                     <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                         <Button x:Name="btnSaveSettings" Content="保存设置" Width="100" Height="30" Click="BtnSaveSettings_Click"/>
                         <Button x:Name="btnOpenSettingsDir" Content="打开配置目录" Width="120" Height="30" Margin="8,0,0,0" Click="BtnOpenSettingsDir_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ── 通知增强 ── -->
+        <TabItem x:Name="tabNotify" Header="通知增强">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="12">
+                    <CheckBox x:Name="chkNotifyEnable" Content="启用通知增强" Margin="0,4,0,0"/>
+                    <CheckBox x:Name="chkNotifySubagents" Content="子代理/子任务完成时也通知" Margin="0,10,0,0"/>
+                    <CheckBox x:Name="chkNotifyTray" Content="显示托盘通知" Margin="0,10,0,0"/>
+
+                    <GroupBox x:Name="gbExternalHook" Header="外部命令" Margin="0,16,0,0">
+                        <StackPanel>
+                            <CheckBox x:Name="chkNotifyExternal" Content="启用外部命令" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="lblHookCommand" Text="命令:" Margin="0,8,0,0"/>
+                            <TextBox x:Name="txtHookCommand" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="lblHookArgs" Text="参数模板:" Margin="0,8,0,0"/>
+                            <TextBox x:Name="txtHookArgs" Margin="0,4,0,0" TextWrapping="Wrap" AcceptsReturn="True" Height="60"/>
+                            <TextBlock x:Name="lblHookHint" Foreground="Gray" TextWrapping="Wrap" Margin="0,4,0,0"
+                                       Text="支持占位符: {event} {title} {sessionId} {parentSessionId} {turn} {reason} {durationMs}"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button x:Name="btnInstallNotifyPlugin" Content="安装/更新 dsh 通知插件" Width="190" Height="30" Click="BtnInstallNotifyPlugin_Click"/>
+                        <Button x:Name="btnUninstallNotifyPlugin" Content="卸载 dsh 通知插件" Width="130" Height="30" Margin="8,0,0,0" Click="BtnUninstallNotifyPlugin_Click"/>
+                        <Button x:Name="btnTestNotify" Content="测试通知" Width="100" Height="30" Margin="8,0,0,0" Click="BtnTestNotify_Click"/>
+                        <Button x:Name="btnSaveNotify" Content="保存设置" Width="100" Height="30" Margin="8,0,0,0" Click="BtnSaveNotify_Click"/>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

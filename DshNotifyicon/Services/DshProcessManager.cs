@@ -52,6 +52,8 @@ namespace DshNotifyicon.Services
         /// <summary>非主动停止的进程退出，携带说明。</summary>
         public event Action<string> Exited;
         public event Action<string> LogLine;
+        /// <summary>dsh 通知增强插件输出的结构化通知 JSON。</summary>
+        public event Action<string> Notification;
 
         readonly SemaphoreSlim _opLock = new SemaphoreSlim(1, 1);
         readonly object _logLock = new object();
@@ -151,7 +153,7 @@ namespace DshNotifyicon.Services
         }
 
         /// <summary>启动 dsh web。返回是否成功进入 Running；失败时状态为 Error。</summary>
-        public async Task<bool> StartAsync(int port, bool randomPort, string trustedHosts, string nodeExe, string binJs, string envPath)
+        public async Task<bool> StartAsync(int port, bool randomPort, string trustedHosts, string nodeExe, string binJs, string envPath, bool notifySubagents = false, bool notifyEnabled = true)
         {
             await _opLock.WaitAsync();
             try
@@ -184,7 +186,12 @@ namespace DshNotifyicon.Services
                     {
                         FileName = nodeExe,
                         Arguments = args,
-                        Environment = new Dictionary<string, string> { { "Path", envPath } }
+                        Environment = new Dictionary<string, string>
+                        {
+                            { "Path", envPath },
+                            { "DSH_NOTIFY_ENABLED", notifyEnabled ? "1" : "0" },
+                            { "DSH_NOTIFY_INCLUDE_SUBAGENTS", notifySubagents ? "1" : "0" }
+                        }
                     },
                     line => OnProcLine(line, urlHolder),
                     line => { Log("[stderr] " + line); });
@@ -302,6 +309,12 @@ namespace DshNotifyicon.Services
         void OnProcLine(string line, string[] urlHolder)
         {
             Log(line);
+            const string prefix = "DSH_NOTIFY ";
+            if (line.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                try { Notification?.Invoke(line.Substring(prefix.Length)); } catch { }
+                return;
+            }
             if (urlHolder[0] == null)
             {
                 var m = UrlRx.Match(line);

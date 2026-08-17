@@ -1,0 +1,6 @@
+{
+  "name": "dsh-notify-hook",
+  "private": true,
+  "type": "module",
+  "main": "index.js"
+}

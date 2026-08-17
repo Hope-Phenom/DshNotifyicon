@@ -38,6 +38,34 @@ namespace DshNotifyicon.Services
 
         /// <summary>界面语言：auto = 跟随系统；zh / en = 手动指定。</summary>
         public string Language = "auto";
+
+        // ── 通知增强 ──
+
+        /// <summary>是否启用通知增强（总开关）。</summary>
+        public bool EnableNotifications = true;
+
+        /// <summary>子代理/子任务完成时是否也通知。</summary>
+        public bool NotifySubagents;
+
+        /// <summary>是否显示托盘通知。</summary>
+        public bool EnableTrayNotification = true;
+
+        /// <summary>是否执行外部自定义命令。</summary>
+        public bool EnableExternalHook;
+
+        /// <summary>外部命令可执行文件（例如 python、powershell.exe）。</summary>
+        public string ExternalHookCommand = "";
+
+        /// <summary>外部命令参数模板，支持 {event} {title} {sessionId} {parentSessionId} {turn} {reason} {durationMs}。</summary>
+        public string ExternalHookArguments = "";
+
+        // ── 托盘 ──
+
+        /// <summary>双击托盘图标行为：main = 打开主面板；web = 打开 Web UI。</summary>
+        public string TrayDoubleClickAction = "main";
+
+        /// <summary>托盘程序启动后是否自动启动 dsh。</summary>
+        public bool AutoStartDshOnLaunch;
     }
 
     /// <summary>

@@ -36,11 +36,23 @@ A WPF (.NET Framework 4.6.2) desktop tray assistant for [DeepSeek Harness](https
 - Menu: Start / Stop / Restart DSH, Open Web UI, Copy URL, Environment Check, Main Window, Auto-start at logon, Exit
 - **Exit = stops the DSH service first**, so no orphaned node processes are left behind
 - Running-state icon shows a green badge; closing the main window hides to tray; single-instance (launching again activates the existing window)
+- Double-click the tray icon opens the main window by default; you can change it to open the Web UI in Settings
+
+### Notification enhancements (Notification Enhancements tab)
+
+- Notifies on every dsh `turn/end` (each response round)
+- Optionally also notifies for subagents/subtasks
+- Shows tray notifications and/or runs a user-defined external command (e.g. an existing Python notification script)
+- One-click install/update/uninstall of the bundled `dsh-notify-hook` plugin
+- Notification payload includes `sessionId`, `parentSessionId`, `turn`, `reason`, and `durationMs`
+
+> Notifications are only emitted when dsh is launched through DshNotifyicon (it injects `DSH_NOTIFY_ENABLED=1`).
 
 ### Other
 
 - **Bilingual UI (中文 / English)**: auto-detects the system language at startup — no configuration needed; switch anytime from the Settings page, **takes effect immediately and is saved automatically**
 - Auto-start uses the **HKCU registry Run key, no admin rights required** (current user only)
+- Optional auto-start of the DSH service when the tray app launches
 - **Clean up dsh environment** (Settings page): stop dsh → uninstall the global npm package → rename the data directory (API credentials & sessions) to `.dsh.bak-<date>` as a **backup, not a delete** (recoverable) → remove the logon auto-start entry; full log streaming, cancellable; **Node.js is NOT uninstalled**
 - Settings persisted to `%APPDATA%\DshNotifyicon\settings.json` (atomic write; corrupt files are backed up and defaults restored)
 - All background operations (npm/winget/install) run async and stream to the UI without blocking it
@@ -62,7 +74,7 @@ msbuild DshNotifyicon.slnx /restore /p:Configuration=Release
 Output: `DshNotifyicon\bin\Release\DshNotifyicon.exe` (double-click to run, no install).
 NuGet dependencies: `Hardcodet.NotifyIcon.Wpf` (tray), `Newtonsoft.Json` (settings serialization).
 
-> To distribute, just copy the exe together with `Hardcodet.NotifyIcon.Wpf.dll` and `Newtonsoft.Json.dll` from the same directory.
+> To distribute, copy the exe together with `Hardcodet.NotifyIcon.Wpf.dll`, `Newtonsoft.Json.dll`, and the `tools\dsh-notify-hook` folder from the same output directory.
 
 ## Usage
 
@@ -71,6 +83,7 @@ NuGet dependencies: `Hardcodet.NotifyIcon.Wpf` (tray), `Newtonsoft.Json` (settin
 3. **Service tab**: set the port (or tick random port) → **Start DSH** → the browser opens the Web UI automatically.
 4. **Tray**: day-to-day operations live here — the icon gains a green dot while running; hover to see the current URL.
 5. **UI Language** (optional): follows the system by default; switch to 中文 / English anytime from the "UI Language" dropdown in Settings — takes effect immediately.
+6. **Notification Enhancements tab** (optional): install/update the dsh notification plugin, then choose tray notifications and/or an external command.
 
 > Install-type operations (Node.js / dsh) automatically switch to the Service tab's log panel to stream progress, while the Environment tab shows a progress bar;
 > the install button turns into "Cancel" — click it anytime to abort (the process tree is cleaned up); on success the app returns to the Environment tab and re-runs the health check.
@@ -80,6 +93,36 @@ NuGet dependencies: `Hardcodet.NotifyIcon.Wpf` (tray), `Newtonsoft.Json` (settin
 - **Port in use**: detected before start; a dialog offers "open the browser on that port directly" or cancel.
 - **Other dsh instances found** (e.g. a manually opened terminal window): three choices — stop them and start a new instance / only open the browser / abort. This prevents two instances from writing the same data directory concurrently and corrupting sessions.
 - **Random port mode**: the URL is parsed from dsh output automatically; tray tooltip, log panel and "Open Web UI" all show the real address.
+
+### Notification Enhancements (optional)
+
+1. Open the **Notification Enhancements** tab.
+2. Click **Install/Update dsh Notification Plugin** to install the bundled `dsh-notify-hook` plugin into the web profile.
+3. Choose your options:
+   - **Enable notification enhancements** — master switch.
+   - **Notify for subagents/subtasks too** — also notify on subagent `turn/end`.
+   - **Show tray notifications** — show a native tray balloon after each response.
+   - **Enable external command** — run a custom command/script, e.g. an existing Python notification script.
+4. Click **Save Settings** and restart dsh if it is already running.
+5. To remove the plugin later, click **Uninstall dsh Notification Plugin**.
+
+External command placeholders:
+
+```text
+{event} {title} {sessionId} {parentSessionId} {turn} {reason} {durationMs}
+```
+
+Example:
+
+```text
+Command: python
+Arguments: E:\QuickStart\send_notification.py {sessionId} {reason} {durationMs}
+```
+
+### Tray settings
+
+- **Double-click tray icon**: can be set to open the main window or open the Web UI directly.
+- **Auto-start DSH after tray launch**: when enabled, DSH starts automatically as soon as DshNotifyicon launches.
 
 ## Headless smoke test
 
@@ -120,19 +163,20 @@ DshNotifyicon/
 ├─ DshNotifyicon.slnx        Solution
 ├─ DshNotifyicon/
 │  ├─ App.xaml(.cs)          Single instance, tray lifecycle, --smoke mode, event wiring, applies UI language at startup
-│  ├─ MainWindow.xaml(.cs)   Environment / Service / Settings / About tabs; refreshes all static texts on language switch
+│  ├─ MainWindow.xaml(.cs)   Environment / Service / Settings / Notification Enhancements / About tabs; refreshes all static texts on language switch
 │  ├─ TrayIcon.cs            Tray icon & menu (built in code with Hardcodet; texts refresh with the language)
 │  ├─ AppServices.cs         Service container: settings / DSH process / main window / tray
 │  ├─ Services/
-│  │  ├─ Settings.cs         Settings model (incl. Language field) & atomic persistence
+│  │  ├─ Settings.cs         Settings model (incl. Language field & notification settings) & atomic persistence
 │  │  ├─ Localization.cs     CN/EN string table, auto-detection & language switching (Loc.T / Loc.Changed)
 │  │  ├─ ProcessRunner.cs    Hidden process execution, separated stdout/stderr, timeout, process-tree kill
 │  │  ├─ NodeService.cs      Node.js detection / winget+MSI install / PATH refresh
 │  │  ├─ NpmService.cs       npm wrapper (@latest, per-command --registry, serialized queue, semver)
-│  │  ├─ DshProcessManager.cs  State machine, preflight, URL parsing, health probe, start/stop
+│  │  ├─ DshProcessManager.cs  State machine, preflight, URL parsing, health probe, start/stop, DSH_NOTIFY parsing
 │  │  └─ EnvironmentCheckService.cs  Health-check aggregation
 │  └─ Assets/app.ico         Icon (rendered from DeepSeek's official favicon.svg; app-running has a green dot)
 └─ tools/
+   ├─ dsh-notify-hook/       dsh plugin that emits DSH_NOTIFY lines on turn/end
    ├─ gen-icons.js           Icon regeneration script (node)
    └─ favicon.svg            Official icon source
 ```

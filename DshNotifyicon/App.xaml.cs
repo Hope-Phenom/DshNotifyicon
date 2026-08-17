@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using DshNotifyicon.Services;
+using Newtonsoft.Json.Linq;
 
 namespace DshNotifyicon
 {
@@ -23,6 +24,7 @@ namespace DshNotifyicon
         Mutex _mutex;
         EventWaitHandle _showSignal;
         bool _smoke;
+        bool _exitStopDone;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -84,6 +86,11 @@ namespace DshNotifyicon
             Services.Tray = new TrayIcon(actions, settings);
 
             WireDshEvents();
+
+            if (settings.AutoStartDshOnLaunch)
+            {
+                Dispatcher.BeginInvoke(new Action(() => Services.Main.StartFromTray()));
+            }
 
             SessionEnding += (s, se) => StopDshSync();
 
@@ -162,6 +169,85 @@ namespace DshNotifyicon
                 Services.Tray.ShowBalloon(Loc.T("app.exitedTitle"), info);
             };
             Services.Dsh.LogLine += line => Services.Main.TraceLog(line);
+            Services.Dsh.Notification += OnDshNotification;
+        }
+
+        /// <summary>处理 dsh 通知增强插件输出。</summary>
+        void OnDshNotification(string json)
+        {
+            try
+            {
+                var s = Services.Settings;
+                if (!s.EnableNotifications) return;
+
+                var obj = JObject.Parse(json);
+                var sessionId = (string)obj["sessionId"] ?? "";
+                var parentSessionId = (string)obj["parentSessionId"];
+                var turn = obj["turn"] != null ? obj["turn"].Value<int>() : 0;
+                var reason = (string)obj["reason"] ?? "unknown";
+                var durationMs = obj["durationMs"] != null ? obj["durationMs"].Value<long>() : 0L;
+                var sessionTitle = (string)obj["title"] ?? "";
+                if (string.IsNullOrEmpty(sessionTitle)) sessionTitle = Loc.T("notify.untitled");
+
+                var notifyTitle = parentSessionId == null
+                    ? Loc.T("notify.turnEndTitle")
+                    : Loc.T("notify.subTurnEndTitle");
+                var text = parentSessionId == null
+                    ? Loc.T("notify.turnEndText", sessionTitle, sessionId, turn, reason, FormatDuration(durationMs))
+                    : Loc.T("notify.subTurnEndText", sessionTitle, sessionId, parentSessionId, turn, reason, FormatDuration(durationMs));
+
+                if (s.EnableTrayNotification)
+                    Services.Tray.ShowBalloon(notifyTitle, text);
+
+                if (s.EnableExternalHook && !string.IsNullOrWhiteSpace(s.ExternalHookCommand))
+                {
+                    var args = ExpandHookTemplate(s.ExternalHookArguments, obj);
+                    _ = RunExternalHookAsync(s.ExternalHookCommand, args);
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.Main.TraceLog(Loc.T("notify.parseFail", ex.Message));
+            }
+        }
+
+        async Task RunExternalHookAsync(string command, string arguments)
+        {
+            try
+            {
+                await ProcessRunner.RunAsync(new ProcessSpec
+                {
+                    FileName = command,
+                    Arguments = arguments,
+                    TimeoutMs = 30000
+                }, CancellationToken.None, null);
+            }
+            catch (Exception ex)
+            {
+                Services.Main.TraceLog(Loc.T("notify.hookFail", ex.Message));
+            }
+        }
+
+        static string ExpandHookTemplate(string template, JObject data)
+        {
+            if (string.IsNullOrEmpty(template)) return "";
+            var turn = data["turn"];
+            var durationMs = data["durationMs"];
+            var s = template
+                .Replace("{event}", (string)data["event"] ?? "")
+                .Replace("{title}", (string)data["title"] ?? "")
+                .Replace("{sessionId}", (string)data["sessionId"] ?? "")
+                .Replace("{parentSessionId}", (string)data["parentSessionId"] ?? "")
+                .Replace("{turn}", turn == null ? "" : turn.ToString())
+                .Replace("{reason}", (string)data["reason"] ?? "")
+                .Replace("{durationMs}", durationMs == null ? "" : durationMs.ToString());
+            return s;
+        }
+
+        static string FormatDuration(long ms)
+        {
+            if (ms < 1000) return ms + " ms";
+            return (ms / 1000.0).ToString("0.0") + " s";
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -169,8 +255,9 @@ namespace DshNotifyicon
             if (Services != null)
             {
                 SettingsService.Save(Services.Settings);
-                // 兜底：正常退出路径应已由 ExitWithDsh 停止 dsh（StopAsync 幂等，未运行时是 no-op）
-                StopDshSync();
+                // 如果 ExitWithDsh 已经处理过停止，则不再阻塞等待；
+                // 其他退出路径（系统注销/异常退出）仍走兜底 StopDshSync。
+                if (!_exitStopDone) StopDshSync();
                 if (Services.Tray != null) Services.Tray.Dispose();
             }
             base.OnExit(e);
@@ -178,15 +265,16 @@ namespace DshNotifyicon
 
         /// <summary>
         /// 托盘"退出"：先关闭 dsh 服务再退出，避免遗留用户难以清理的 node 进程。
-        /// 限时等待（启动流程进行中可能暂时拿不到互斥锁）；超时直接退出，
+        /// 异步等待避免阻塞 UI 线程导致“卡死”；超时后也继续退出，
         /// 残留实例会在下次启动时被外部实例扫描发现并提示处理。
         /// </summary>
-        void ExitWithDsh()
+        async void ExitWithDsh()
         {
             try
             {
                 Services.Main.ForceClose();
-                StopDshSync();
+                await Task.WhenAny(Services.Dsh.StopAsync(), Task.Delay(TimeSpan.FromSeconds(8)));
+                _exitStopDone = true;
                 Shutdown();
             }
             catch

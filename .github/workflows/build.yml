@@ -37,6 +37,7 @@ jobs:
             DshNotifyicon/bin/Release/DshNotifyicon.exe.config
             DshNotifyicon/bin/Release/Hardcodet.NotifyIcon.Wpf.dll
             DshNotifyicon/bin/Release/Newtonsoft.Json.dll
+            DshNotifyicon/bin/Release/tools
             README.md
             README_zh.md
           if-no-files-found: error
@@ -66,7 +67,7 @@ jobs:
         run: |
           cd dist
           mkdir pkg
-          cp DshNotifyicon/bin/Release/* pkg/
+          cp -r DshNotifyicon/bin/Release/* pkg/
           cp README.md README_zh.md pkg/
           cd pkg
           zip -r "../DshNotifyicon-${{ steps.ver.outputs.tag }}-win-x64.zip" .

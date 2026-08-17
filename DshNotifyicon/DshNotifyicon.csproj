@@ -111,5 +111,11 @@
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\app-running.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\tools\dsh-notify-hook\**\*">
+      <Link>tools\dsh-notify-hook\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

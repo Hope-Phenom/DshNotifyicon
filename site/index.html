@@ -187,15 +187,31 @@
         <h3 data-i18n="f6t">轻量免装</h3>
         <p data-i18n="f6d">.NET Framework 4.6.2 系统自带，绿色单 exe，无需管理员权限，退出自动停 dsh。</p>
       </div>
+      <div class="card">
+        <span class="emoji">🔔</span>
+        <h3 data-i18n="f7t">通知增强</h3>
+        <p data-i18n="f7d">每轮回答结束通过托盘通知你；可选子代理通知、外部命令，并支持一键安装/更新/卸载 dsh 插件。</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🖱️</span>
+        <h3 data-i18n="f8t">托盘自定义</h3>
+        <p data-i18n="f8d">双击托盘图标可设为打开主面板或直接打开 Web UI；也可让托盘启动后自动启动 DSH。</p>
+      </div>
+      <div class="card">
+        <span class="emoji">⚙️</span>
+        <h3 data-i18n="f9t">自动启动 DSH</h3>
+        <p data-i18n="f9d">开启后，托盘程序一启动就自动拉起 dsh Web 服务，省去手动点“启动 DSH”。</p>
+      </div>
     </div>
   </section>
 
   <section>
-    <h2 data-i18n="howTitle">三步上手 <small>Get started</small></h2>
+    <h2 data-i18n="howTitle">四步上手 <small>Get started</small></h2>
     <ol class="steps">
       <li><div><b data-i18n="s1t">体检</b><span data-i18n="s1d">打开「环境」页一键体检，缺失的 Node.js / dsh 点按钮直接安装（支持 npm 镜像加速）。</span></div></li>
       <li><div><b data-i18n="s2t">启动</b><span data-i18n="s2d">「服务」页设置端口（或随机端口）→ 启动 DSH，浏览器自动打开 Web UI。</span></div></li>
       <li><div><b data-i18n="s3t">常驻托盘</b><span data-i18n="s3d">之后日常操作都在托盘：启动/停止/重启、复制 URL、退出（自动先停 dsh）。</span></div></li>
+      <li><div><b data-i18n="s4t">通知增强（可选）</b><span data-i18n="s4d">在「通知增强」页安装/更新插件，开启每轮回答结束的托盘通知或外部命令。</span></div></li>
     </ol>
   </section>
 
@@ -243,9 +259,13 @@
       f4t: "启动预检", f4d: "端口占用检测 + 外部 dsh 实例扫描，防止双实例并发写坏会话数据。",
       f5t: "安全清理", f5d: "一键清理 dsh 环境：数据目录备份为 .dsh.bak 而非删除，可随时恢复。",
       f6t: "轻量免装", f6d: ".NET Framework 4.6.2 系统自带，绿色单 exe，无需管理员权限，退出自动停 dsh。",
-      howTitle: "三步上手", s1t: "体检", s1d: "打开「环境」页一键体检，缺失的 Node.js / dsh 点按钮直接安装（支持 npm 镜像加速）。",
+      f7t: "通知增强", f7d: "每轮回答结束通过托盘通知你；可选子代理通知、外部命令，并支持一键安装/更新/卸载 dsh 插件。",
+      f8t: "托盘自定义", f8d: "双击托盘图标可设为打开主面板或直接打开 Web UI；也可让托盘启动后自动启动 DSH。",
+      f9t: "自动启动 DSH", f9d: "开启后，托盘程序一启动就自动拉起 dsh Web 服务，省去手动点“启动 DSH”。",
+      howTitle: "四步上手", s1t: "体检", s1d: "打开「环境」页一键体检，缺失的 Node.js / dsh 点按钮直接安装（支持 npm 镜像加速）。",
       s2t: "启动", s2d: "「服务」页设置端口（或随机端口）→ 启动 DSH，浏览器自动打开 Web UI。",
       s3t: "常驻托盘", s3d: "之后日常操作都在托盘：启动/停止/重启、复制 URL、退出（自动先停 dsh）。",
+      s4t: "通知增强（可选）", s4d: "在「通知增强」页安装/更新插件，开启每轮回答结束的托盘通知或外部命令。",
       iconsTitle: "应用图标", iconsIdle: "未运行", iconsRunning: "运行中（绿点）",
       reqTitle: "环境要求", r1: "Windows 10 / 11（.NET Framework 4.6.2 系统自带）",
       r2: "Node.js ≥ 18 —— 工具内可一键安装", r3: "dsh —— 工具内可一键安装/更新",
@@ -260,9 +280,13 @@
       f4t: "Start Preflight", f4d: "Port-in-use detection + external dsh instance scan prevent two instances from corrupting session data.",
       f5t: "Safe Cleanup", f5d: "One-click dsh environment cleanup: the data directory is backed up as .dsh.bak instead of deleted — fully recoverable.",
       f6t: "Lightweight", f6d: ".NET Framework 4.6.2 ships with Windows; portable single exe, no admin rights; exiting always stops dsh.",
+      f7t: "Notification Enhancements", f7d: "Get tray notifications after every response; optionally notify for subagents, run external commands, and install/update/uninstall the dsh plugin in one click.",
+      f8t: "Tray Customization", f8d: "Configure double-click to open the main window or the Web UI; optionally auto-start DSH when the tray app launches.",
+      f9t: "Auto-start DSH", f9d: "When enabled, DSH starts automatically as soon as the tray app launches — no need to click Start DSH manually.",
       howTitle: "Get started", s1t: "Check", s1d: "Run the health check on the Environment tab; install missing Node.js / dsh with one click (npm mirror supported).",
       s2t: "Start", s2d: "Set the port on the Service tab (or use a random port) → Start DSH; the browser opens the Web UI automatically.",
       s3t: "Live in tray", s3d: "Day-to-day operations live in the tray: start/stop/restart, copy URL, exit (stops dsh first).",
+      s4t: "Notification Enhancements (optional)", s4d: "Install/update the plugin on the Notification Enhancements tab to enable tray notifications or external commands after each response.",
       iconsTitle: "App icon", iconsIdle: "Idle", iconsRunning: "Running (green dot)",
       reqTitle: "Requirements", r1: "Windows 10 / 11 (.NET Framework 4.6.2 built in)",
       r2: "Node.js ≥ 18 — one-click installable from the tool", r3: "dsh — one-click installable/updatable from the tool",

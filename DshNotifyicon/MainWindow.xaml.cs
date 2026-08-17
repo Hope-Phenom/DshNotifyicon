@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,7 +12,7 @@ using DshNotifyicon.Services;
 namespace DshNotifyicon
 {
     /// <summary>
-    /// 主窗口：环境 / 服务 / 设置 / 关于 四页。关闭即隐藏到托盘；所有操作经服务层异步执行。
+    /// 主窗口：环境 / 服务 / 设置 / 通知增强 / 关于 五页。关闭即隐藏到托盘；所有操作经服务层异步执行。
     /// 界面语言：启动时按设置应用（auto = 跟随系统），语言切换后由 Loc.Changed 刷新全部静态文案。
     /// </summary>
     public partial class MainWindow : Window
@@ -45,6 +47,7 @@ namespace DshNotifyicon
             tabEnv.Header = Loc.T("tab.env");
             tabService.Header = Loc.T("tab.service");
             tabSettings.Header = Loc.T("tab.settings");
+            tabNotify.Header = Loc.T("tab.notify");
             tabAbout.Header = Loc.T("tab.about");
 
             btnCheck.Content = Loc.T("env.check");
@@ -73,12 +76,18 @@ namespace DshNotifyicon
             chkAutoOpen.Content = Loc.T("set.autoOpen");
             chkAutoStart.Content = Loc.T("set.autoStart");
             chkShowMain.Content = Loc.T("set.showMain");
+            chkAutoStartDsh.Content = Loc.T("set.autoStartDsh");
             lblExitNote.Text = Loc.T("set.exitNote");
             gbLang.Header = Loc.T("set.langGroup");
             SetComboItem(cmbLang, 0, Loc.T("set.langAuto"));
             SetComboItem(cmbLang, 1, Loc.T("set.langZh"));
             SetComboItem(cmbLang, 2, Loc.T("set.langEn"));
             lblLangHint.Text = Loc.T("set.langHint");
+            gbTray.Header = Loc.T("set.trayGroup");
+            lblDoubleClick.Text = Loc.T("set.doubleClick");
+            SetComboItem(cmbTrayDoubleClick, 0, Loc.T("set.doubleClickMain"));
+            SetComboItem(cmbTrayDoubleClick, 1, Loc.T("set.doubleClickWeb"));
+            lblDoubleClickHint.Text = Loc.T("set.doubleClickHint");
             gbAdvanced.Header = Loc.T("set.advanced");
             lblTrusted.Text = Loc.T("set.trustedHosts");
             lblNodePath.Text = Loc.T("set.nodePath");
@@ -87,6 +96,19 @@ namespace DshNotifyicon
             btnCleanup.Content = Loc.T("set.cleanupBtn");
             btnSaveSettings.Content = Loc.T("set.save");
             btnOpenSettingsDir.Content = Loc.T("set.openDir");
+
+            chkNotifyEnable.Content = Loc.T("notify.enable");
+            chkNotifySubagents.Content = Loc.T("notify.subagents");
+            chkNotifyTray.Content = Loc.T("notify.tray");
+            gbExternalHook.Header = Loc.T("notify.externalGroup");
+            chkNotifyExternal.Content = Loc.T("notify.externalEnable");
+            lblHookCommand.Text = Loc.T("notify.command");
+            lblHookArgs.Text = Loc.T("notify.arguments");
+            lblHookHint.Text = Loc.T("notify.hint");
+            btnInstallNotifyPlugin.Content = Loc.T("notify.installPlugin");
+            btnUninstallNotifyPlugin.Content = Loc.T("notify.uninstallPlugin");
+            btnTestNotify.Content = Loc.T("notify.test");
+            btnSaveNotify.Content = Loc.T("notify.save");
 
             txtAboutName.Text = Loc.T("about.name");
             txtAboutDesc.Text = Loc.T("about.desc");
@@ -517,7 +539,7 @@ namespace DshNotifyicon
                     }
                 }
 
-                bool ok = await App.Services.Dsh.StartAsync(port, random, s.TrustedHosts, node.NodeExe, binJs, App.Services.EnvPath);
+                bool ok = await App.Services.Dsh.StartAsync(port, random, s.TrustedHosts, node.NodeExe, binJs, App.Services.EnvPath, s.NotifySubagents, s.EnableNotifications);
                 return ok;
             }
             catch (Exception ex)
@@ -697,12 +719,20 @@ namespace DshNotifyicon
                 chkAutoOpen.IsChecked = s.AutoOpenBrowser;
                 chkAutoStart.IsChecked = s.AutoStartOnLogin;
                 chkShowMain.IsChecked = s.ShowMainWindowOnStartup;
+                chkAutoStartDsh.IsChecked = s.AutoStartDshOnLaunch;
                 txtTrustedHosts.Text = s.TrustedHosts;
                 txtNodePath.Text = s.NodePath;
                 cmbLang.SelectedIndex = LangIndexFromSetting(s.Language);
+                cmbTrayDoubleClick.SelectedIndex = s.TrayDoubleClickAction == "web" ? 1 : 0;
                 if (s.MirrorUrl == "https://registry.npmmirror.com") cmbMirror.SelectedIndex = 1;
                 else if (s.MirrorUrl.Length > 0) { cmbMirror.SelectedIndex = 2; txtCustomMirror.Text = s.MirrorUrl; }
                 else cmbMirror.SelectedIndex = 0;
+                chkNotifyEnable.IsChecked = s.EnableNotifications;
+                chkNotifySubagents.IsChecked = s.NotifySubagents;
+                chkNotifyTray.IsChecked = s.EnableTrayNotification;
+                chkNotifyExternal.IsChecked = s.EnableExternalHook;
+                txtHookCommand.Text = s.ExternalHookCommand;
+                txtHookArgs.Text = s.ExternalHookArguments;
             }
             finally
             {
@@ -735,6 +765,15 @@ namespace DshNotifyicon
             Loc.Apply(v);
         }
 
+        /// <summary>双击托盘图标行为切换：立即生效 + 持久化。</summary>
+        void CmbTrayDoubleClick_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingUi) return;
+            var s = App.Services.Settings;
+            s.TrayDoubleClickAction = cmbTrayDoubleClick.SelectedIndex == 1 ? "web" : "main";
+            SettingsService.Save(s);
+        }
+
         void ChkRandomPort_Changed(object sender, RoutedEventArgs e)
         {
             txtPort.IsEnabled = chkRandomPort.IsChecked != true;
@@ -753,15 +792,234 @@ namespace DshNotifyicon
             s.RandomPort = chkRandomPort.IsChecked == true;
             s.AutoOpenBrowser = chkAutoOpen.IsChecked == true;
             s.ShowMainWindowOnStartup = chkShowMain.IsChecked == true;
+            s.AutoStartDshOnLaunch = chkAutoStartDsh.IsChecked == true;
             s.TrustedHosts = (txtTrustedHosts.Text ?? "").Trim();
             s.NodePath = (txtNodePath.Text ?? "").Trim();
             s.Language = LangSettingFromIndex(cmbLang.SelectedIndex);
+            s.TrayDoubleClickAction = cmbTrayDoubleClick.SelectedIndex == 1 ? "web" : "main";
             bool autoStartChanged = s.AutoStartOnLogin != (chkAutoStart.IsChecked == true);
             s.AutoStartOnLogin = chkAutoStart.IsChecked == true;
             if (autoStartChanged) App.Services.ToggleAutoStart(s.AutoStartOnLogin);
             SettingsService.Save(s);
             txtCheckStatus.Text = Loc.T("set.saved");
             MessageBox.Show(Loc.T("set.saved"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        // ── 通知增强页 ──
+
+        void BtnSaveNotify_Click(object sender, RoutedEventArgs e)
+        {
+            var s = App.Services.Settings;
+            s.EnableNotifications = chkNotifyEnable.IsChecked == true;
+            s.NotifySubagents = chkNotifySubagents.IsChecked == true;
+            s.EnableTrayNotification = chkNotifyTray.IsChecked == true;
+            s.EnableExternalHook = chkNotifyExternal.IsChecked == true;
+            s.ExternalHookCommand = (txtHookCommand.Text ?? "").Trim();
+            s.ExternalHookArguments = (txtHookArgs.Text ?? "").Trim();
+            SettingsService.Save(s);
+            MessageBox.Show(Loc.T("set.saved"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        void BtnTestNotify_Click(object sender, RoutedEventArgs e)
+        {
+            App.Services.Tray.ShowBalloon(Loc.T("notify.testTitle"), Loc.T("notify.testText"));
+        }
+
+        async void BtnInstallNotifyPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            var pluginDir = FindNotifyPluginDir();
+            if (pluginDir == null)
+            {
+                MessageBox.Show(Loc.T("notify.pluginNotFound"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var s = App.Services.Settings;
+                var node = await NodeService.DetectAsync(s.NodePath);
+                if (node.NodeExe == null)
+                {
+                    MessageBox.Show(Loc.T("svc.noNode"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                var binJs = await App.Services.DshBinJsAsync();
+                if (binJs == null)
+                {
+                    MessageBox.Show(Loc.T("svc.noDsh"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var spec = "link:" + pluginDir.Replace('\\', '/');
+                var args = ProcessRunner.Quote(binJs) + " plugin --profile web add " + ProcessRunner.Quote(spec);
+                TraceLog(Loc.T("notify.installing", pluginDir));
+                var r = await ProcessRunner.RunAsync(new ProcessSpec
+                {
+                    FileName = node.NodeExe,
+                    Arguments = args,
+                    Environment = new Dictionary<string, string> { { "Path", App.Services.EnvPath } },
+                    TimeoutMs = 120000
+                }, CancellationToken.None, line => TraceLog(line));
+
+                if (r.TimedOut || r.Cancelled || r.ExitCode != 0)
+                {
+                    MessageBox.Show(Loc.T("notify.installFail", r.ExitCode, (r.Error ?? "").Trim()),
+                        Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                EnsureNotifyPatch();
+                MessageBox.Show(Loc.T("notify.installDone"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Loc.T("notify.installFail", "?", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        static string FindNotifyPluginDir()
+        {
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var candidates = new[]
+            {
+                Path.Combine(baseDir, "tools", "dsh-notify-hook"),
+                Path.Combine(Directory.GetCurrentDirectory(), "tools", "dsh-notify-hook")
+            };
+            foreach (var c in candidates)
+                if (Directory.Exists(c)) return c;
+
+            var dir = new DirectoryInfo(baseDir);
+            for (int i = 0; i < 6 && dir != null; i++, dir = dir.Parent)
+            {
+                var p = Path.Combine(dir.FullName, "tools", "dsh-notify-hook");
+                if (Directory.Exists(p)) return p;
+            }
+            return null;
+        }
+
+        static void EnsureNotifyPatch()
+        {
+            var home = Environment.GetEnvironmentVariable("DSH_HOME");
+            if (string.IsNullOrEmpty(home))
+                home = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh");
+            var profileDir = Path.Combine(home, "profiles", "web");
+            var patchPath = Path.Combine(profileDir, "cordis.patch.yml");
+            if (!Directory.Exists(profileDir)) Directory.CreateDirectory(profileDir);
+
+            var lines = new List<string>();
+            if (File.Exists(patchPath))
+                lines.AddRange(File.ReadAllLines(patchPath));
+
+            bool hasMarker = false;
+            foreach (var line in lines)
+            {
+                if (line.Contains("dsh-notify-hook")) { hasMarker = true; break; }
+            }
+
+            // 移除 Cordis patch 模板里的空列表占位符 []；
+            // 之前版本可能错误地保留了 [] 又追加 insert，导致 YAML 变成非法列表。
+            lines.RemoveAll(line => line.Trim() == "[]");
+
+            if (!hasMarker)
+            {
+                if (lines.Count > 0 && lines[lines.Count - 1].Length != 0)
+                    lines.Add("");
+                lines.Add("- insert:");
+                lines.Add("    - id: dsh-notify-hook");
+                lines.Add("      name: dsh-notify-hook");
+            }
+
+            File.WriteAllLines(patchPath, lines);
+        }
+
+        static void RemoveNotifyPatch()
+        {
+            var home = Environment.GetEnvironmentVariable("DSH_HOME");
+            if (string.IsNullOrEmpty(home))
+                home = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh");
+            var patchPath = Path.Combine(home, "profiles", "web", "cordis.patch.yml");
+            if (!File.Exists(patchPath)) return;
+
+            var lines = new List<string>(File.ReadAllLines(patchPath));
+            var result = new List<string>();
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                bool isInsertHeader = line.Trim() == "- insert:";
+                bool isPluginNext = i + 1 < lines.Count && lines[i + 1].Contains("dsh-notify-hook");
+                if (isInsertHeader && isPluginNext)
+                {
+                    // 跳过 - insert: 及其紧随的 id 行；name 行会在下面按 marker 跳过
+                    i++;
+                    continue;
+                }
+                if (line.Contains("dsh-notify-hook")) continue;
+                result.Add(line);
+            }
+
+            // 如果已经没有实际内容，恢复为模板占位符 []
+            bool hasContent = false;
+            foreach (var l in result)
+            {
+                var t = l.Trim();
+                if (t.Length > 0 && !t.StartsWith("#")) { hasContent = true; break; }
+            }
+            if (!hasContent)
+            {
+                result.Clear();
+                result.Add("[]");
+            }
+
+            File.WriteAllLines(patchPath, result);
+        }
+
+        async void BtnUninstallNotifyPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            var r = Ask(
+                Loc.T("notify.uninstallConfirm"),
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, Loc.T("notify.uninstallConfirmTitle"));
+            if (r != MessageBoxResult.Yes) return;
+
+            try
+            {
+                var s = App.Services.Settings;
+                var node = await NodeService.DetectAsync(s.NodePath);
+                if (node.NodeExe == null)
+                {
+                    MessageBox.Show(Loc.T("svc.noNode"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                var binJs = await App.Services.DshBinJsAsync();
+                if (binJs == null)
+                {
+                    MessageBox.Show(Loc.T("svc.noDsh"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var args = ProcessRunner.Quote(binJs) + " plugin --profile web remove dsh-notify-hook";
+                TraceLog(Loc.T("notify.uninstalling"));
+                var rr = await ProcessRunner.RunAsync(new ProcessSpec
+                {
+                    FileName = node.NodeExe,
+                    Arguments = args,
+                    Environment = new Dictionary<string, string> { { "Path", App.Services.EnvPath } },
+                    TimeoutMs = 120000
+                }, CancellationToken.None, line => TraceLog(line));
+
+                if (rr.TimedOut || rr.Cancelled || rr.ExitCode != 0)
+                {
+                    MessageBox.Show(Loc.T("notify.uninstallFail", rr.ExitCode, (rr.Error ?? "").Trim()),
+                        Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                RemoveNotifyPatch();
+                MessageBox.Show(Loc.T("notify.uninstallDone"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Loc.T("notify.uninstallFail", "?", ex.Message), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         void BtnOpenSettingsDir_Click(object sender, RoutedEventArgs e)
