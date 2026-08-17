@@ -138,7 +138,7 @@
   <div class="wrap">
     <img class="logo" src="favicon.svg" alt="whale">
     <h1>DshNotifyicon<span class="dot">.</span></h1>
-    <p class="tagline" data-i18n="tagline">DeepSeek Harness（dsh）的桌面托盘助手：一键环境配置与 Web UI 启停，不用再开命令行窗口。</p>
+    <p class="tagline" data-i18n="tagline">DeepSeek Harness（dsh）的桌面托盘助手：一键环境配置、Web UI 启停与回答完成通知，不用再开命令行窗口。</p>
     <div class="badges">
       <a href="https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml"><img src="https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml/badge.svg" alt="build"></a>
       <a href="https://github.com/Hope-Phenom/DshNotifyicon/releases"><img src="https://img.shields.io/github/v/release/Hope-Phenom/DshNotifyicon" alt="release"></a>
@@ -168,9 +168,9 @@
         <p data-i18n="f2d">托盘一键启动/停止/重启 Web UI，自动解析实际 URL 并打开浏览器，随机端口也准确。</p>
       </div>
       <div class="card">
-        <span class="emoji">🌐</span>
-        <h3 data-i18n="f3t">双语界面</h3>
-        <p data-i18n="f3d">自动识别系统语言（中文 / English），设置页可随时手动切换，立即生效。</p>
+        <span class="emoji">🔔</span>
+        <h3 data-i18n="f7t">通知增强</h3>
+        <p data-i18n="f7d">每轮回答结束通过托盘通知你；可选子代理通知、外部命令，并支持一键安装/更新/卸载 dsh 插件。</p>
       </div>
       <div class="card">
         <span class="emoji">🛡️</span>
@@ -188,9 +188,9 @@
         <p data-i18n="f6d">.NET Framework 4.6.2 系统自带，绿色单 exe，无需管理员权限，退出自动停 dsh。</p>
       </div>
       <div class="card">
-        <span class="emoji">🔔</span>
-        <h3 data-i18n="f7t">通知增强</h3>
-        <p data-i18n="f7d">每轮回答结束通过托盘通知你；可选子代理通知、外部命令，并支持一键安装/更新/卸载 dsh 插件。</p>
+        <span class="emoji">🌐</span>
+        <h3 data-i18n="f3t">双语界面</h3>
+        <p data-i18n="f3d">自动识别系统语言（中文 / English），设置页可随时手动切换，立即生效。</p>
       </div>
       <div class="card">
         <span class="emoji">🖱️</span>
@@ -251,7 +251,7 @@
 <script>
   var I18N = {
     zh: {
-      tagline: "DeepSeek Harness（dsh）的桌面托盘助手：一键环境配置与 Web UI 启停，不用再开命令行窗口。",
+      tagline: "DeepSeek Harness（dsh）的桌面托盘助手：一键环境配置、Web UI 启停与回答完成通知，不用再开命令行窗口。",
       dl: "下载最新版", dlNote: "Windows x64 · 免安装 · .NET Framework 4.6.2 系统自带",
       featTitle: "特性", f1t: "一键体检", f1d: "Node.js / npm 镜像 / dsh 三项状态自动检测，缺失项一键修复，全程限时不卡界面。",
       f2t: "DSH 启停", f2d: "托盘一键启动/停止/重启 Web UI，自动解析实际 URL 并打开浏览器，随机端口也准确。",
@@ -272,7 +272,7 @@
       footRepo: "GitHub 仓库", footReadme: "README", footReleases: "Releases", footIssues: "反馈问题"
     },
     en: {
-      tagline: "A desktop tray assistant for DeepSeek Harness (dsh): one-click environment setup and Web UI start/stop — no more manual terminal windows.",
+      tagline: "A desktop tray assistant for DeepSeek Harness (dsh): one-click environment setup, Web UI start/stop, and response notifications — no more manual terminal windows.",
       dl: "Download", dlNote: "Windows x64 · no install · .NET Framework 4.6.2 built into Windows",
       featTitle: "Features", f1t: "Health Check", f1d: "Auto-checks Node.js / npm mirror / dsh in one click; missing items are fixed with one button; time-bounded, never freezes.",
       f2t: "Start / Stop", f2d: "Start, stop or restart the Web UI from the tray; the real URL is parsed automatically and the browser opens by itself — accurate even with random ports.",
