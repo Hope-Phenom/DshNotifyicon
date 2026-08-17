@@ -54,6 +54,13 @@
                             </StackPanel>
                         </StackPanel>
                     </GroupBox>
+
+                    <GroupBox x:Name="gbPnpm" Header="pnpm（dsh 插件管理必需）" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="txtPnpm" TextWrapping="Wrap"/>
+                            <Button x:Name="btnInstallPnpm" Content="一键安装 pnpm" Width="150" HorizontalAlignment="Left" Margin="0,8,0,0" Visibility="Collapsed" Click="BtnInstallPnpm_Click"/>
+                        </StackPanel>
+                    </GroupBox>
                 </StackPanel>
             </ScrollViewer>
         </TabItem>

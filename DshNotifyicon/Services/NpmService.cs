@@ -193,5 +193,37 @@ namespace DshNotifyicon.Services
             }
             catch { return null; }
         }
+
+        /// <summary>在刷新后的 PATH 中查找 pnpm 可执行文件（pnpm.exe / pnpm.cmd）。dsh 的 plugin 命令内部 spawnSync("pnpm")，缺失会报 "'pnpm' 不是内部或外部命令"。</summary>
+        public static string FindPnpm(string envPath)
+        {
+            var exts = new[] { ".exe", ".cmd" };
+            foreach (var seg in (envPath ?? "").Split(';'))
+            {
+                var dir = seg.Trim();
+                if (dir.Length == 0) continue;
+                foreach (var ext in exts)
+                {
+                    var p = Path.Combine(dir, "pnpm" + ext);
+                    if (File.Exists(p)) return p;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 确保 pnpm 可用：缺失时 npm install -g pnpm（尊重镜像源），安装后刷新 PATH 再验证。
+        /// 返回刷新后的 PATH（安装可能新增目录，调用方应使用返回值而非旧 envPath）。
+        /// </summary>
+        public static async Task<string> EnsurePnpmAsync(string mirrorUrl, string envPath, Action<string> log, CancellationToken ct)
+        {
+            if (FindPnpm(envPath) != null) return envPath;
+            log(Loc.T("npm.pnpmInstalling"));
+            await WithGateAsync(() => ExecNpmAsync("install -g pnpm" + RegistryArg(mirrorUrl), envPath, log, ct));
+            var fresh = NodeService.RefreshPath();
+            if (FindPnpm(fresh) == null)
+                throw new InvalidOperationException(Loc.T("npm.pnpmInstallFail"));
+            return fresh;
+        }
     }
 }

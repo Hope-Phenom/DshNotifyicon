@@ -98,6 +98,7 @@ NuGet dependencies: `Hardcodet.NotifyIcon.Wpf` (tray), `Newtonsoft.Json` (settin
 
 1. Open the **Notification Enhancements** tab.
 2. Click **Install/Update dsh Notification Plugin** to install the bundled `dsh-notify-hook` plugin into the web profile.
+   > dsh's plugin management requires `pnpm`. If pnpm is not installed, the tool automatically runs `npm install -g pnpm` and then continues; you can also check it under the Health Check on the Environment tab and install it with one click.
 3. Choose your options:
    - **Enable notification enhancements** — master switch.
    - **Notify for subagents/subtasks too** — also notify on subagent `turn/end`.

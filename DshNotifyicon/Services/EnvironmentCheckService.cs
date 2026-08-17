@@ -71,6 +71,13 @@ namespace DshNotifyicon.Services
                              (string.IsNullOrEmpty(settings.MirrorUrl) ? "" : "\n" + Loc.T("ec.regToolAppend", settings.MirrorUrl))
                 });
 
+                // pnpm（dsh 插件管理必需，纯本地检查）
+                log?.Invoke(Loc.T("ec.checkingPnpm"));
+                var pnpmPath = NpmService.FindPnpm(envPath);
+                items.Add(pnpmPath == null
+                    ? new EnvItem { Name = "pnpm", Status = EnvStatus.Missing, Detail = Loc.T("ec.pnpmMissing") }
+                    : new EnvItem { Name = "pnpm", Status = EnvStatus.Ok, Detail = Loc.T("ec.pnpmOk", pnpmPath) });
+
                 // dsh 本地版本（无网络）
                 log?.Invoke(Loc.T("ec.checkingDsh"));
                 string local = "";

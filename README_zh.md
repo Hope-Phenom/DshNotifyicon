@@ -98,6 +98,7 @@ NuGet 依赖：`Hardcodet.NotifyIcon.Wpf`（托盘）、`Newtonsoft.Json`（设�
 
 1. 打开「通知增强」页。
 2. 点击「安装/更新 dsh 通知插件」，将内置的 `dsh-notify-hook` 插件安装到 web profile。
+   > dsh 的插件管理依赖 `pnpm`。若本机未安装 pnpm，工具会自动执行 `npm install -g pnpm` 后再继续；也可在「环境」页体检查看并一键安装。
 3. 按需勾选：
    - **启用通知增强**：总开关。
    - **子代理/子任务完成时也通知**：子代理 `turn/end` 时也通知。

@@ -63,6 +63,8 @@ namespace DshNotifyicon
             gbDsh.Header = Loc.T("env.dshGroup");
             btnInstallDsh.Content = Loc.T("env.installDsh");
             btnCheckUpdate.Content = Loc.T("env.checkUpdate");
+            gbPnpm.Header = Loc.T("env.pnpmGroup");
+            btnInstallPnpm.Content = Loc.T("env.installPnpm");
 
             lblPort.Text = Loc.T("svc.port");
             chkRandomPort.Content = Loc.T("svc.randomPort");
@@ -258,6 +260,10 @@ namespace DshNotifyicon
                         txtDsh.Text = StatusPrefix(item.Status) + detail;
                         btnInstallDsh.Content = item.Status == EnvStatus.Missing ? Loc.T("env.installDshShort") : Loc.T("env.updateDshShort");
                         break;
+                    case "pnpm":
+                        txtPnpm.Text = StatusPrefix(item.Status) + detail;
+                        btnInstallPnpm.Visibility = item.Status == EnvStatus.Missing ? Visibility.Visible : Visibility.Collapsed;
+                        break;
                 }
             }
         }
@@ -364,6 +370,21 @@ namespace DshNotifyicon
                     await NpmService.InstallOrUpdateDshAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, log, ct);
                     var v = await NpmService.GetDshLocalVersionAsync(App.Services.EnvPath);
                     log(Loc.T("env.installedVersion", v));
+                },
+                RunEnvCheckAsync);
+        }
+
+        async void BtnInstallPnpm_Click(object sender, RoutedEventArgs e)
+        {
+            if (_opActive) { CancelOp(); return; }
+            await RunLongOpAsync(
+                Loc.T("env.installPnpmTitle"),
+                btnInstallPnpm, null,
+                async (log, ct) =>
+                {
+                    await NpmService.EnsurePnpmAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, log, ct);
+                    App.Services.RefreshEnvPath();
+                    log(Loc.T("env.installedVersion", "pnpm"));
                 },
                 RunEnvCheckAsync);
         }
@@ -850,6 +871,10 @@ namespace DshNotifyicon
                     return;
                 }
 
+                // dsh 的 plugin add 内部会 spawnSync("pnpm")，缺失时先自动安装 pnpm
+                await NpmService.EnsurePnpmAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, line => TraceLog(line), CancellationToken.None);
+                App.Services.RefreshEnvPath();
+
                 var spec = "link:" + pluginDir.Replace('\\', '/');
                 var args = ProcessRunner.Quote(binJs) + " plugin --profile web add " + ProcessRunner.Quote(spec);
                 TraceLog(Loc.T("notify.installing", pluginDir));
@@ -995,6 +1020,10 @@ namespace DshNotifyicon
                     MessageBox.Show(Loc.T("svc.noDsh"), Loc.T("app.name"), MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
+
+                // 卸载同样走 dsh plugin → pnpm，先确保 pnpm 可用
+                await NpmService.EnsurePnpmAsync(App.Services.Settings.MirrorUrl, App.Services.EnvPath, line => TraceLog(line), CancellationToken.None);
+                App.Services.RefreshEnvPath();
 
                 var args = ProcessRunner.Quote(binJs) + " plugin --profile web remove dsh-notify-hook";
                 TraceLog(Loc.T("notify.uninstalling"));
