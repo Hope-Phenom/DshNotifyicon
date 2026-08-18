@@ -2,14 +2,14 @@
 
 [English](README.md) | **简体中文**
 
-[![Build](https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml/badge.svg)](https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/Hope-Phenom/DshNotifyicon)](https://github.com/Hope-Phenom/DshNotifyicon/releases)
+[![Build](https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml/badge.svg)](https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/Hope-Phenom/dsh-desktop-tray)](https://github.com/Hope-Phenom/dsh-desktop-tray/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 
 基于 WPF（.NET Framework 4.6.2）的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）桌面助手。托盘常驻，一键解决环境配置与 Web UI 启停的易用性问题——**不再需要手动打开命令行窗口，也不需要自己记 URL**。
 
-> 在线页面：[hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)
-> 项目主页：[github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
+> 在线页面：[hope-phenom.github.io/dsh-desktop-tray](https://hope-phenom.github.io/dsh-desktop-tray)
+> 项目主页：[github.com/Hope-Phenom/dsh-desktop-tray](https://github.com/Hope-Phenom/dsh-desktop-tray)
 
 ## 特性
 
@@ -182,7 +182,7 @@ DshNotifyicon/
    └─ favicon.svg            官方图标源文件
 ```
 
-`site/` 为 GitHub Pages 落地页源码（`index.html` 双语单文件 + 图标素材），由 `.github/workflows/pages.yml` 自动部署到 [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)。
+`site/` 为 GitHub Pages 落地页源码（`index.html` 双语单文件 + 图标素材），由 `.github/workflows/pages.yml` 自动部署到 [hope-phenom.github.io/dsh-desktop-tray](https://hope-phenom.github.io/dsh-desktop-tray)。
 
 ## 开发备注
 

@@ -2,14 +2,14 @@
 
 **English** | [简体中文](README_zh.md)
 
-[![Build](https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml/badge.svg)](https://github.com/Hope-Phenom/DshNotifyicon/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/Hope-Phenom/DshNotifyicon)](https://github.com/Hope-Phenom/DshNotifyicon/releases)
+[![Build](https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml/badge.svg)](https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/Hope-Phenom/dsh-desktop-tray)](https://github.com/Hope-Phenom/dsh-desktop-tray/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 
 A WPF (.NET Framework 4.6.2) desktop tray assistant for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`). It lives in the tray and solves the usability pain of environment setup and Web UI start/stop — **no more manual terminal windows, no more memorizing URLs**.
 
-> Project page: [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon)
-> Repository: [github.com/Hope-Phenom/DshNotifyicon](https://github.com/Hope-Phenom/DshNotifyicon)
+> Project page: [hope-phenom.github.io/dsh-desktop-tray](https://hope-phenom.github.io/dsh-desktop-tray)
+> Repository: [github.com/Hope-Phenom/dsh-desktop-tray](https://github.com/Hope-Phenom/dsh-desktop-tray)
 
 ## Features
 
@@ -182,7 +182,7 @@ DshNotifyicon/
    └─ favicon.svg            Official icon source
 ```
 
-`site/` is the GitHub Pages landing-page source (single-file bilingual `index.html` + icon assets), auto-deployed by `.github/workflows/pages.yml` to [hope-phenom.github.io/DshNotifyicon](https://hope-phenom.github.io/DshNotifyicon).
+`site/` is the GitHub Pages landing-page source (single-file bilingual `index.html` + icon assets), auto-deployed by `.github/workflows/pages.yml` to [hope-phenom.github.io/dsh-desktop-tray](https://hope-phenom.github.io/dsh-desktop-tray).
 
 ## Development notes
 
