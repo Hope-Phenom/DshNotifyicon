@@ -19,7 +19,7 @@ namespace DshNotifyicon.Services
         // [0]=中文, [1]=English
         static readonly Dictionary<string, string[]> _t = new Dictionary<string, string[]>
         {
-            { "app.name", new[] { "DSH 托盘助手", "DSH Tray Helper" } },
+            { "app.name", new[] { "dsh-desktop-tray", "dsh-desktop-tray" } },
 
             { "tab.env", new[] { "环境", "Environment" } },
             { "tab.service", new[] { "服务", "Service" } },
@@ -148,7 +148,7 @@ namespace DshNotifyicon.Services
             { "notify.parseFail", new[] { "通知解析失败: {0}", "Notification parse failed: {0}" } },
             { "notify.hookFail", new[] { "外部命令执行失败: {0}", "External command failed: {0}" } },
 
-            { "about.name", new[] { "DSH 托盘助手", "DSH Tray Helper" } },
+            { "about.name", new[] { "dsh-desktop-tray", "dsh-desktop-tray" } },
             { "about.desc", new[] { "DeepSeek Harness（dsh）的桌面托盘助手：一键完成环境配置（Node.js / npm 镜像源 / dsh 安装与更新）与 Web UI 启停，自动解析实际地址并打开浏览器——无需手动打开命令行窗口。", "A desktop tray assistant for DeepSeek Harness (dsh): one-click environment setup (Node.js / npm mirror / dsh install & update) and Web UI start/stop, with automatic URL resolution and browser launch — no more manual terminal windows." } },
             { "about.techGroup", new[] { "技术栈", "Tech Stack" } },
             { "about.tech1", new[] { "· WPF · .NET Framework 4.6.2 · C# 7.3", "· WPF · .NET Framework 4.6.2 · C# 7.3" } },

@@ -1,4 +1,4 @@
-# DshNotifyicon — DSH 托盘助手
+# dsh-desktop-tray — DSH 托盘助手
 
 [English](README.md) | **简体中文**
 
@@ -46,7 +46,7 @@
 - 提供一键安装/更新/卸载内置 `dsh-notify-hook` 插件
 - 通知内容包含 `sessionId`、`parentSessionId`、`turn`、`reason`、`durationMs`
 
-> 只有通过 DshNotifyicon 启动 dsh 时才会注入 `DSH_NOTIFY_ENABLED=1` 并触发通知。
+> 只有通过 dsh-desktop-tray 启动 dsh 时才会注入 `DSH_NOTIFY_ENABLED=1` 并触发通知。
 
 ### 其他
 
@@ -124,7 +124,7 @@ NuGet 依赖：`Hardcodet.NotifyIcon.Wpf`（托盘）、`Newtonsoft.Json`（设�
 ### 托盘设置
 
 - **双击托盘图标**：可设为打开主面板或直接打开 Web UI。
-- **托盘启动后自动启动 DSH**：开启后，DshNotifyicon 启动时自动拉起 dsh 服务。
+- **托盘启动后自动启动 DSH**：开启后，dsh-desktop-tray 启动时自动拉起 dsh 服务。
 
 ## 无 UI 冒烟验证
 

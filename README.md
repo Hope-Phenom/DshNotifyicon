@@ -1,4 +1,4 @@
-# DshNotifyicon — DSH Tray Helper
+# dsh-desktop-tray — DSH Tray Helper
 
 **English** | [简体中文](README_zh.md)
 
@@ -46,7 +46,7 @@ A WPF (.NET Framework 4.6.2) desktop tray assistant for [DeepSeek Harness](https
 - One-click install/update/uninstall of the bundled `dsh-notify-hook` plugin
 - Notification payload includes `sessionId`, `parentSessionId`, `turn`, `reason`, and `durationMs`
 
-> Notifications are only emitted when dsh is launched through DshNotifyicon (it injects `DSH_NOTIFY_ENABLED=1`).
+> Notifications are only emitted when dsh is launched through dsh-desktop-tray (it injects `DSH_NOTIFY_ENABLED=1`).
 
 ### Other
 
@@ -124,7 +124,7 @@ Arguments: E:\QuickStart\send_notification.py {sessionId} {reason} {durationMs}
 ### Tray settings
 
 - **Double-click tray icon**: can be set to open the main window or open the Web UI directly.
-- **Auto-start DSH after tray launch**: when enabled, DSH starts automatically as soon as DshNotifyicon launches.
+- **Auto-start DSH after tray launch**: when enabled, DSH starts automatically as soon as dsh-desktop-tray launches.
 
 ## Headless smoke test
 

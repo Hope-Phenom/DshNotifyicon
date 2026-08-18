@@ -1,10 +1,10 @@
 # dsh-notify-hook
 
-dsh 通知增强插件：在每一轮回答结束（`turn/end`）时向 stdout 输出一行结构化通知，供 DshNotifyicon 解析并展示托盘通知/执行外部命令。
+dsh 通知增强插件：在每一轮回答结束（`turn/end`）时向 stdout 输出一行结构化通知，供 dsh-desktop-tray 解析并展示托盘通知/执行外部命令。
 
 ## 启用条件
 
-- 由 DshNotifyicon 启动 dsh 时，会自动注入 `DSH_NOTIFY_ENABLED=1`；
+- 由 dsh-desktop-tray 启动 dsh 时，会自动注入 `DSH_NOTIFY_ENABLED=1`；
 - 手动运行 dsh 时不会输出，避免干扰。
 
 ## 可选环境变量

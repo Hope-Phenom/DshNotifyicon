@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DshNotifyicon · DSH Tray Helper</title>
+<title>dsh-desktop-tray · DSH Tray Helper</title>
 <meta name="description" content="DeepSeek Harness (dsh) desktop tray assistant: one-click environment setup and Web UI start/stop. / DeepSeek Harness (dsh) 桌面托盘助手：一键环境配置与 Web UI 启停。">
 <meta property="og:type" content="website">
-<meta property="og:title" content="DshNotifyicon — DSH Tray Helper">
+<meta property="og:title" content="dsh-desktop-tray — DSH Tray Helper">
 <meta property="og:description" content="DeepSeek Harness (dsh) desktop tray assistant: one-click environment setup and Web UI start/stop. / DeepSeek Harness (dsh) 桌面托盘助手：一键环境配置与 Web UI 启停。">
 <meta property="og:image" content="https://hope-phenom.github.io/dsh-desktop-tray/preview-app-running.png">
 <meta property="og:url" content="https://hope-phenom.github.io/dsh-desktop-tray/">
@@ -127,7 +127,7 @@
 <body>
 
 <nav>
-  <div class="brand"><img src="favicon.svg" alt="">DshNotifyicon</div>
+  <div class="brand"><img src="favicon.svg" alt="">dsh-desktop-tray</div>
   <div class="lang-switch">
     <button id="btn-zh" onclick="setLang('zh')">中文</button>
     <button id="btn-en" onclick="setLang('en')">EN</button>
@@ -137,7 +137,7 @@
 <header class="hero">
   <div class="wrap">
     <img class="logo" src="favicon.svg" alt="whale">
-    <h1>DshNotifyicon<span class="dot">.</span></h1>
+    <h1>dsh-desktop-tray<span class="dot">.</span></h1>
     <p class="tagline" data-i18n="tagline">DeepSeek Harness（dsh）的桌面托盘助手：一键环境配置、Web UI 启停与回答完成通知，不用再开命令行窗口。</p>
     <div class="badges">
       <a href="https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml"><img src="https://github.com/Hope-Phenom/dsh-desktop-tray/actions/workflows/build.yml/badge.svg" alt="build"></a>
@@ -310,7 +310,7 @@
       if (dict[k]) nodes[i].textContent = dict[k];
     }
     document.documentElement.lang = l === "zh" ? "zh-CN" : "en";
-    document.title = l === "zh" ? "DshNotifyicon · DSH 托盘助手" : "DshNotifyicon · DSH Tray Helper";
+    document.title = l === "zh" ? "dsh-desktop-tray · DSH 托盘助手" : "dsh-desktop-tray · DSH Tray Helper";
     document.getElementById("btn-zh").className = l === "zh" ? "active" : "";
     document.getElementById("btn-en").className = l === "en" ? "active" : "";
   }
