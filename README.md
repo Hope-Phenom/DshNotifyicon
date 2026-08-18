@@ -50,6 +50,7 @@ A WPF (.NET Framework 4.6.2) desktop tray assistant for [DeepSeek Harness](https
 
 ### Other
 
+- **Lightweight**: built with native WPF for Windows only; fast startup, low memory footprint, and no heavy runtime
 - **Bilingual UI (中文 / English)**: auto-detects the system language at startup — no configuration needed; switch anytime from the Settings page, **takes effect immediately and is saved automatically**
 - Auto-start uses the **HKCU registry Run key, no admin rights required** (current user only)
 - Optional auto-start of the DSH service when the tray app launches
